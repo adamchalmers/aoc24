@@ -34,10 +34,19 @@ fn dampen(report: &Report, i: usize) -> Report {
 fn is_report_safe(report: &Report) -> bool {
     // All increasing OR all decreasing (no consecutive numbers can be the same)
     // Gap between 1 and 3 (inclusive)
-    let gaps: Vec<_> = report.array_windows().map(|[a, b]| b - a).collect();
-    let increasing = gaps.iter().all(|gap| gap > &0);
-    let decreasing = gaps.iter().all(|gap| gap < &0);
-    let size_ok = gaps.iter().all(|gap| (1..=3).contains(&gap.abs()));
+    let (increasing, decreasing, size_ok) = report
+        .array_windows()
+        .map(|[level0, level1]| level1 - level0) // Find the gap between two levels
+        .fold(
+            (true, true, true),
+            |(increasing, decreasing, size_ok), gap| {
+                (
+                    increasing && gap > 0,
+                    decreasing && gap < 0,
+                    size_ok && (1..=3).contains(&gap.abs()),
+                )
+            },
+        );
     (increasing || decreasing) && size_ok
 }
 
