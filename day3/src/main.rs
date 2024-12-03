@@ -1,13 +1,10 @@
-use winnow::prelude::*;
+use winnow::{ascii::dec_uint, combinator::separated_pair, prelude::*};
 
 fn main() {
-    let input = std::fs::read_to_string("input").unwrap();
-
+    let input = include_str!("../input");
     let q1 = parse(&input, Part::P1);
-    println!("Q1: {q1}");
-
     let q2 = parse(&input, Part::P2);
-    println!("Q2: {q2}");
+    print!("{}\n{}\n", q1, q2);
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -26,34 +23,16 @@ enum Part {
 }
 
 fn parse(input: &str, part: Part) -> u32 {
-    /// Parses the string 'mul('
-    fn mul_tag(i: &mut &str) -> PResult<()> {
-        "mul(".map(|_| ()).parse_next(i)
-    }
-
-    /// Parses a sequence of digits into a number.
-    fn numbers(i: &mut &str) -> PResult<u32> {
-        winnow::ascii::dec_uint.parse_next(i)
-    }
-
     /// Parses something like 123,456
     fn number_pair(i: &mut &str) -> PResult<(u32, u32)> {
-        winnow::combinator::separated_pair(numbers, ',', numbers).parse_next(i)
+        separated_pair(dec_uint, ',', dec_uint).parse_next(i)
     }
 
     /// Parses a mul instruction like `mul(123, 44)`
     fn mul(i: &mut &str) -> PResult<Mul> {
-        (mul_tag, number_pair, ')')
+        ("mul(", number_pair, ')')
             .map(|(_, (a, b), _)| Mul(a, b))
             .parse_next(i)
-    }
-
-    fn instr_do(i: &mut &str) -> PResult<usize> {
-        "do()".map(|_| 4).parse_next(i)
-    }
-
-    fn instr_dont(i: &mut &str) -> PResult<usize> {
-        "don't()".map(|_| 7).parse_next(i)
     }
 
     let mut enabled = true;
@@ -63,14 +42,14 @@ fn parse(input: &str, part: Part) -> u32 {
     while i < input.len() {
         if part == Part::P2 {
             // Check if we should enable/disable multiplications.
-            if let Ok(len) = instr_do(&mut &input[i..]) {
+            if input[i..].starts_with("do()") {
                 enabled = true;
-                i += len;
+                i += 4;
                 continue;
             }
-            if let Ok(len) = instr_dont(&mut &input[i..]) {
+            if input[i..].starts_with("don't()") {
                 enabled = false;
-                i += len;
+                i += 7;
                 continue;
             }
         }
