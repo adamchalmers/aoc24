@@ -1,4 +1,8 @@
-use winnow::{ascii::dec_uint, combinator::separated_pair, prelude::*};
+use winnow::{
+    ascii::dec_uint,
+    combinator::{delimited, separated_pair},
+    prelude::*,
+};
 
 fn main() {
     let input = include_str!("../input");
@@ -8,11 +12,11 @@ fn main() {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-struct Mul(u32, u32);
+struct Mul((u32, u32));
 
 impl Mul {
     fn run(self) -> u32 {
-        self.0 * self.1
+        self.0 .0 * self.0 .1
     }
 }
 
@@ -30,9 +34,7 @@ fn parse(input: &str, part: Part) -> u32 {
 
     /// Parses a mul instruction like `mul(123, 44)`
     fn mul(i: &mut &str) -> PResult<Mul> {
-        ("mul(", number_pair, ')')
-            .map(|(_, (a, b), _)| Mul(a, b))
-            .parse_next(i)
+        delimited("mul(", number_pair, ')').map(Mul).parse_next(i)
     }
 
     let mut enabled = true;
