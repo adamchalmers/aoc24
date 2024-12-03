@@ -8,15 +8,15 @@ defmodule Day1Ex do
 3   3"
   end
 
-  def parseTwoLists(str) do
+  def q1(str) do
     lists =
       str
       |> String.split("\n")
       |> Enum.map(fn x -> String.split(x, "   ") end)
       |> Enum.zip()
-      |> Enum.map(fn x -> Tuple.to_list(x) end)
+      |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(fn x -> Enum.map(x, fn y -> Integer.parse(y) |> elem(0) end) end)
-      |> Enum.map(fn x -> Enum.sort(x) end)
+      |> Enum.map(&Enum.sort/1)
 
     l = Enum.at(lists, 1)
     r = Enum.at(lists, 0)
