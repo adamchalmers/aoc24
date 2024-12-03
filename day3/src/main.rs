@@ -2,9 +2,14 @@ use winnow::prelude::*;
 
 fn main() {
     let input = std::fs::read_to_string("input").unwrap();
+
     let muls = parse(&input, Part::P1);
-    let q1: u32 = muls.iter().map(|mul| mul.run()).sum();
+    let q1: u32 = muls.iter().map(Mul::run).sum();
     println!("Q1: {q1}");
+
+    let muls = parse(&input, Part::P2);
+    let q2: u32 = muls.iter().map(Mul::run).sum();
+    println!("Q2: {q2}");
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -53,20 +58,19 @@ fn parse(input: &str, part: Part) -> Vec<Mul> {
         .filter_map(|(i, _char)| {
             // Note, this is inefficient, we should be using winnow to skip over the chars
             // we know don't correspond to an actual Mul instruction.
-            let mut suffix = &input[i..];
 
             if part == Part::P2 {
                 // Enable or disable multiplications.
-                if instr_do(&mut suffix).is_ok() {
+                if instr_do(&mut &input[i..]).is_ok() {
                     enabled = true;
                 }
-                if instr_dont(&mut suffix).is_ok() {
+                if instr_dont(&mut &input[i..]).is_ok() {
                     enabled = false;
                 }
             }
             // Do multiplications, if enabled and valid.
             if enabled {
-                mul(&mut suffix).ok()
+                mul(&mut &input[i..]).ok()
             } else {
                 None
             }
@@ -88,9 +92,33 @@ mod tests {
     }
 
     #[test]
+    fn test_real() {
+        let input = std::fs::read_to_string("input").unwrap();
+
+        let muls = parse(&input, Part::P1);
+        let actual_q1: u32 = muls.iter().map(Mul::run).sum();
+
+        let muls = parse(&input, Part::P2);
+        let actual_q2: u32 = muls.iter().map(Mul::run).sum();
+        let expected_q1 = 153469856;
+        let expected_q2 = 77055967;
+        assert_eq!(actual_q1, expected_q1);
+        assert_eq!(actual_q2, expected_q2);
+    }
+
+    #[test]
     fn test_q1() {
         let muls = parse(TEST_INPUT, Part::P1);
-        let actual: u32 = muls.into_iter().map(|mul| mul.run()).sum();
+        let actual: u32 = muls.iter().map(Mul::run).sum();
         assert_eq!(actual, 161);
+    }
+
+    #[test]
+    fn test_q2() {
+        let test_input =
+            "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
+        let muls = parse(test_input, Part::P2);
+        let actual: u32 = muls.iter().map(Mul::run).sum();
+        assert_eq!(actual, 48);
     }
 }
