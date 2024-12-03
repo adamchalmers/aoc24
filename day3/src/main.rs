@@ -30,25 +30,32 @@ fn parse(input: &str, part: Part) -> u32 {
     fn mul_tag(i: &mut &str) -> PResult<()> {
         "mul(".map(|_| ()).parse_next(i)
     }
+
     /// Parses a sequence of digits into a number.
     fn numbers(i: &mut &str) -> PResult<u32> {
         winnow::ascii::dec_uint.parse_next(i)
     }
+
     /// Parses something like 123,456
     fn number_pair(i: &mut &str) -> PResult<(u32, u32)> {
         winnow::combinator::separated_pair(numbers, ',', numbers).parse_next(i)
     }
+
+    /// Parses a mul instruction like `mul(123, 44)`
     fn mul(i: &mut &str) -> PResult<Mul> {
         (mul_tag, number_pair, ')')
             .map(|(_, (a, b), _)| Mul(a, b))
             .parse_next(i)
     }
+
     fn instr_do(i: &mut &str) -> PResult<usize> {
         "do()".map(|_| 4).parse_next(i)
     }
+
     fn instr_dont(i: &mut &str) -> PResult<usize> {
         "don't()".map(|_| 7).parse_next(i)
     }
+
     let mut enabled = true;
 
     let mut i = 0;
