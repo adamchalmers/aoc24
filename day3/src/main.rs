@@ -43,35 +43,44 @@ fn parse(input: &str, part: Part) -> u32 {
             .map(|(_, (a, b), _)| Mul(a, b))
             .parse_next(i)
     }
-    fn instr_do(i: &mut &str) -> PResult<()> {
-        "do()".map(|_| ()).parse_next(i)
+    fn instr_do(i: &mut &str) -> PResult<usize> {
+        "do()".map(|_| 4).parse_next(i)
     }
-    fn instr_dont(i: &mut &str) -> PResult<()> {
-        "don't()".map(|_| ()).parse_next(i)
+    fn instr_dont(i: &mut &str) -> PResult<usize> {
+        "don't()".map(|_| 7).parse_next(i)
     }
     let mut enabled = true;
-    input
-        .chars()
-        .enumerate()
-        .map(|(i, _char)| {
-            if part == Part::P2 {
-                // Enable or disable multiplications.
-                if instr_do(&mut &input[i..]).is_ok() {
-                    enabled = true;
-                    return 0;
-                }
-                if instr_dont(&mut &input[i..]).is_ok() {
-                    enabled = false;
-                    return 0;
-                }
+
+    let mut i = 0;
+    let mut sum_of_product = 0;
+    while i < input.len() {
+        if part == Part::P2 {
+            // Check if we should enable/disable multiplications.
+            if let Ok(len) = instr_do(&mut &input[i..]) {
+                enabled = true;
+                i += len;
+                continue;
             }
-            // Do multiplications, if enabled and valid.
-            if !enabled {
-                return 0;
+            if let Ok(len) = instr_dont(&mut &input[i..]) {
+                enabled = false;
+                i += len;
+                continue;
             }
-            mul(&mut &input[i..]).map(Mul::run).unwrap_or_default()
-        })
-        .sum()
+        }
+        // Do multiplications, if enabled and one is parsed.
+        let mut suffix = &input[i..];
+        let n = suffix.len();
+        if enabled {
+            if let Some(mul) = mul(&mut suffix).ok() {
+                sum_of_product += mul.run();
+                let chars_parsed = n - suffix.len();
+                i += chars_parsed;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    sum_of_product
 }
 
 #[cfg(test)]
