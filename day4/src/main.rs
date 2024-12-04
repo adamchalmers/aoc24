@@ -5,9 +5,8 @@ fn main() {
     let input = include_str!("../input");
     let grid = parse(input);
     let q1 = solve_q1(&grid);
-    println!("Q1: {q1}");
     let q2 = solve_q2(&grid);
-    println!("Q2: {q2}");
+    print!("Q1: {q1}\nQ2: {q2}\n");
 }
 
 struct Grid(Vec<Vec<char>>);
