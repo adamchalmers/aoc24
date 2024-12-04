@@ -1,5 +1,5 @@
-defmodule Day1Ex do
-  def testInput do
+defmodule Day1 do
+  def test_input do
     "3   4
 4   3
 2   5
@@ -9,28 +9,21 @@ defmodule Day1Ex do
   end
 
   def q1(str) do
-    lists =
-      str
-      |> String.split("\n")
-      |> Enum.map(fn x -> String.split(x, "   ") end)
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(fn x -> Enum.map(x, fn y -> Integer.parse(y) |> elem(0) end) end)
-      |> Enum.map(&Enum.sort/1)
-
-    l = Enum.at(lists, 1)
-    r = Enum.at(lists, 0)
-    range = 0..(length(r) - 1)
-
-    diffs =
-      for i <- range,
-          do: abs(Enum.at(l, i) - Enum.at(r, i))
-
-    diffs |> Enum.sum()
+    str
+    |> String.split("\n")
+    |> Enum.map(fn x -> String.split(x, "   ") end)
+    # Turn list of pairs into a pair of tuples
+    |> Enum.zip()
+    # zip returns tuples, but tuples aren't iterable. So make em lists instead.
+    |> Enum.map(&Tuple.to_list/1)
+    |> Enum.map(fn list -> Enum.map(list, &str_to_int/1) end)
+    |> Enum.map(&Enum.sort/1)
+    # Turn pair of lists into list of pairs.
+    |> Enum.zip()
+    # Find the absolute difference between each pair.
+    |> Enum.map(fn pair -> abs(elem(pair, 0) - elem(pair, 1)) end)
+    |> Enum.sum()
   end
 
-  def hello do
-    IO.puts("hello")
-    :world
-  end
+  def str_to_int(str), do: Integer.parse(str) |> elem(0)
 end

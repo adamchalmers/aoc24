@@ -1,8 +1,14 @@
-defmodule Day1ExTest do
+defmodule Day1Test do
   use ExUnit.Case
-  doctest Day1Ex
+  doctest Day1
 
-  test "greets the world" do
-    assert Day1Ex.hello() == :world
+  test "Q1 on test input" do
+    input = Day1.test_input()
+    assert Day1.q1(input) == 11
+  end
+
+  test "Q1 on real input" do
+    input = File.read!("input")
+    assert Day1.q1(input) == 3_574_690
   end
 end
