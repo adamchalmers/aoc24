@@ -6,6 +6,8 @@ fn main() {
     let grid = parse(input);
     let q1 = solve_q1(&grid);
     println!("Q1: {q1}");
+    let q2 = solve_q2(&grid);
+    println!("Q2: {q2}");
 }
 
 struct Grid(Vec<Vec<char>>);
@@ -32,6 +34,27 @@ fn parse(input: &str) -> Grid {
     Grid(vecs)
 }
 
+fn solve_q2(grid: &Grid) -> usize {
+    let mut found = 0;
+    for j in 1..(grid.0[0].len() - 1) {
+        for i in 1..(grid.0.len() - 1) {
+            // Check for an a
+            if grid.at(i, j) != Some('A') {
+                continue;
+            }
+            let top_l = grid.at(i - 1, j - 1).unwrap();
+            let top_r = grid.at(i + 1, j - 1).unwrap();
+            let bot_l = grid.at(i - 1, j + 1).unwrap();
+            let bot_r = grid.at(i + 1, j + 1).unwrap();
+            let quadrants: String = [top_l, top_r, bot_l, bot_r].iter().collect();
+            if ["MSMS", "SMSM", "MMSS", "SSMM"].contains(&quadrants.as_str()) {
+                found += 1;
+            }
+        }
+    }
+    found
+}
+
 fn solve_q1(grid: &Grid) -> usize {
     search_horizontal(grid, true)
         + search_horizontal(grid, false)
@@ -52,7 +75,6 @@ fn search_horizontal(grid: &Grid, reverse: bool) -> usize {
             }
         }
     }
-    println!("Horizontal ({reverse}) -> {found}");
     found
 }
 fn search_vertical(grid: &Grid, reverse: bool) -> usize {
@@ -79,7 +101,6 @@ fn search_vertical(grid: &Grid, reverse: bool) -> usize {
             }
         }
     }
-    println!("Vertical ({reverse}) -> {found}");
     found
 }
 fn search_diag_top_right(grid: &Grid, reverse: bool) -> usize {
@@ -106,7 +127,6 @@ fn search_diag_top_right(grid: &Grid, reverse: bool) -> usize {
             }
         }
     }
-    println!("DiagTopRight ({reverse}) -> {found}");
     found
 }
 
@@ -134,7 +154,6 @@ fn search_diag_top_left(grid: &Grid, reverse: bool) -> usize {
             }
         }
     }
-    println!("DiagTopLeft ({reverse}) -> {found}");
     found
 }
 
@@ -193,5 +212,14 @@ XQQQ
         assert_eq!(grid.0[0].len(), 4);
         let q1 = solve_q1(&grid);
         assert_eq!(q1, 1);
+    }
+
+    #[test]
+    fn test_q2() {
+        let grid = parse(TEST_INPUT);
+        assert_eq!(grid.0.len(), 10);
+        assert_eq!(grid.0[0].len(), 10);
+        let q2 = solve_q2(&grid);
+        assert_eq!(q2, 9);
     }
 }
