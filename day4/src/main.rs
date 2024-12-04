@@ -13,19 +13,8 @@ fn main() {
 struct Grid(Vec<Vec<char>>);
 
 impl Grid {
-    fn width(&self) -> usize {
-        self.0.len()
-    }
-
-    fn height(&self) -> usize {
-        self.0[0].len()
-    }
-
-    fn at(&self, x: usize, y: usize) -> Option<char> {
-        if x >= self.width() || y >= self.height() {
-            return None;
-        }
-        Some(self.0[x][y])
+    fn at(&self, x: usize, y: usize) -> char {
+        self.0[x][y]
     }
 }
 
@@ -38,16 +27,24 @@ fn solve_q2(grid: &Grid) -> usize {
     let mut found = 0;
     for j in 1..(grid.0[0].len() - 1) {
         for i in 1..(grid.0.len() - 1) {
-            // Check for an a
-            if grid.at(i, j) != Some('A') {
+            // Check for an A
+            if grid.at(i, j) != 'A' {
                 continue;
             }
-            let top_l = grid.at(i - 1, j - 1).unwrap();
-            let top_r = grid.at(i + 1, j - 1).unwrap();
-            let bot_l = grid.at(i - 1, j + 1).unwrap();
-            let bot_r = grid.at(i + 1, j + 1).unwrap();
-            let quadrants: String = [top_l, top_r, bot_l, bot_r].iter().collect();
-            if ["MSMS", "SMSM", "MMSS", "SSMM"].contains(&quadrants.as_str()) {
+            // Check for the remaining MAS letters.
+            let top_l = grid.at(i - 1, j - 1);
+            let top_r = grid.at(i + 1, j - 1);
+            let bot_l = grid.at(i - 1, j + 1);
+            let bot_r = grid.at(i + 1, j + 1);
+            let quadrants = [top_l, top_r, bot_l, bot_r];
+            if [
+                ['M', 'S', 'M', 'S'],
+                ['S', 'M', 'S', 'M'],
+                ['M', 'M', 'S', 'S'],
+                ['S', 'S', 'M', 'M'],
+            ]
+            .contains(&quadrants)
+            {
                 found += 1;
             }
         }
@@ -80,24 +77,16 @@ fn search_horizontal(grid: &Grid, reverse: bool) -> usize {
 fn search_vertical(grid: &Grid, reverse: bool) -> usize {
     let mut found = 0;
     for j in 0..grid.0[0].len() {
-        for i in 0..grid.0.len() {
-            let Some(x) = grid.at(i, j) else {
-                continue;
-            };
-            let Some(m) = grid.at(i + 1, j) else {
-                continue;
-            };
-            let Some(a) = grid.at(i + 2, j) else {
-                continue;
-            };
-            let Some(s) = grid.at(i + 3, j) else {
-                continue;
-            };
+        for i in 0..(grid.0.len() - 3) {
+            let x = grid.at(i, j);
+            let m = grid.at(i + 1, j);
+            let a = grid.at(i + 2, j);
+            let s = grid.at(i + 3, j);
             if !reverse && [x, m, a, s] == XMAS {
-                found += 1
+                found += 1;
             }
             if reverse && [x, m, a, s] == XMAS_BACKWARDS {
-                found += 1
+                found += 1;
             }
         }
     }
@@ -105,25 +94,17 @@ fn search_vertical(grid: &Grid, reverse: bool) -> usize {
 }
 fn search_diag_top_right(grid: &Grid, reverse: bool) -> usize {
     let mut found = 0;
-    for j in 0..grid.0[0].len() {
-        for i in 0..grid.0.len() {
-            let Some(x) = grid.at(i, j) else {
-                continue;
-            };
-            let Some(m) = grid.at(i + 1, j + 1) else {
-                continue;
-            };
-            let Some(a) = grid.at(i + 2, j + 2) else {
-                continue;
-            };
-            let Some(s) = grid.at(i + 3, j + 3) else {
-                continue;
-            };
+    for j in 0..(grid.0[0].len() - 3) {
+        for i in 0..(grid.0.len() - 3) {
+            let x = grid.at(i, j);
+            let m = grid.at(i + 1, j + 1);
+            let a = grid.at(i + 2, j + 2);
+            let s = grid.at(i + 3, j + 3);
             if !reverse && [x, m, a, s] == XMAS {
-                found += 1
+                found += 1;
             }
             if reverse && [x, m, a, s] == XMAS_BACKWARDS {
-                found += 1
+                found += 1;
             }
         }
     }
@@ -132,25 +113,17 @@ fn search_diag_top_right(grid: &Grid, reverse: bool) -> usize {
 
 fn search_diag_top_left(grid: &Grid, reverse: bool) -> usize {
     let mut found = 0;
-    for j in 0..grid.0[0].len() {
+    for j in 0..(grid.0[0].len() - 3) {
         for i in (3..grid.0.len()).rev() {
-            let Some(x) = grid.at(i, j) else {
-                continue;
-            };
-            let Some(m) = grid.at(i - 1, j + 1) else {
-                continue;
-            };
-            let Some(a) = grid.at(i - 2, j + 2) else {
-                continue;
-            };
-            let Some(s) = grid.at(i - 3, j + 3) else {
-                continue;
-            };
+            let x = grid.at(i, j);
+            let m = grid.at(i - 1, j + 1);
+            let a = grid.at(i - 2, j + 2);
+            let s = grid.at(i - 3, j + 3);
             if !reverse && [x, m, a, s] == XMAS {
-                found += 1
+                found += 1;
             }
             if reverse && [x, m, a, s] == XMAS_BACKWARDS {
-                found += 1
+                found += 1;
             }
         }
     }
@@ -221,5 +194,17 @@ XQQQ
         assert_eq!(grid.0[0].len(), 10);
         let q2 = solve_q2(&grid);
         assert_eq!(q2, 9);
+    }
+    #[test]
+    fn test_q2_real() {
+        let grid = parse(include_str!("../input"));
+        let q2 = solve_q2(&grid);
+        assert_eq!(q2, 1905);
+    }
+    #[test]
+    fn test_q1_real() {
+        let grid = parse(include_str!("../input"));
+        let q1 = solve_q1(&grid);
+        assert_eq!(q1, 2613);
     }
 }
