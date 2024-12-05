@@ -117,19 +117,14 @@ impl Input {
             .enumerate()
             .map(|(i, page_num)| (*page_num, i))
             .collect();
-        for constraint in &self.constraints {
-            let (page_left, page_right) = constraint;
+        self.constraints.iter().all(|(page_left, page_right)| {
             let pos_left_page = update.get(page_left);
             let pos_right_page = update.get(page_right);
             match (pos_left_page, pos_right_page) {
-                (Some(l), Some(r)) if r <= l => {
-                    return false;
-                }
-
-                _ => continue,
+                (Some(l), Some(r)) => l <= r,
+                _ => true,
             }
-        }
-        true
+        })
     }
 
     fn parse(input: &str) -> Result<Self> {
