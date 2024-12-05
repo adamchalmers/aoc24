@@ -15,7 +15,7 @@ fn main() -> Result<()> {
 }
 
 /// Maps page numbers to their order.
-fn topological_ordering(pairs: Vec<(u32, u32)>) -> HashMap<u32, usize> {
+fn topological_ordering(all_numbers: &HashSet<u32>, pairs: &[(u32, u32)]) -> HashMap<u32, usize> {
     let mut graph = HashMap::new();
     let mut nodes_with_incoming_edges = HashSet::new();
     let mut incoming_edges_for_each_node = HashMap::new();
@@ -24,10 +24,10 @@ fn topological_ordering(pairs: Vec<(u32, u32)>) -> HashMap<u32, usize> {
         *incoming_edges_for_each_node.entry(r).or_insert(0) += 1;
         nodes_with_incoming_edges.insert(r);
     }
-    let all_nums: HashSet<_> = pairs.iter().copied().flat_map(|(l, r)| [l, r]).collect();
-    let mut starts: Vec<_> = all_nums
-        .into_iter()
+    let mut starts: Vec<u32> = all_numbers
+        .iter()
         .filter(|num| nodes_with_incoming_edges.contains(num).not())
+        .copied()
         .collect();
     drop(nodes_with_incoming_edges);
     let mut order = Vec::new();
@@ -37,15 +37,16 @@ fn topological_ordering(pairs: Vec<(u32, u32)>) -> HashMap<u32, usize> {
             continue;
         };
         for node_from_curr in removed {
-            *incoming_edges_for_each_node
+            let num_incoming_edges = incoming_edges_for_each_node
                 .get_mut(&node_from_curr)
-                .unwrap() -= 1;
-            if incoming_edges_for_each_node.get(&node_from_curr).unwrap() == &0 {
+                .unwrap();
+            *num_incoming_edges -= 1;
+            if num_incoming_edges == &0 {
                 starts.push(node_from_curr);
             }
         }
     }
-    dbg!(order)
+    order
         .into_iter()
         .enumerate()
         .map(|(i, num)| (num, i))
@@ -71,13 +72,15 @@ impl Input {
                 let mut update = update.to_owned();
                 let numbers_in_update: HashSet<_> = update.iter().copied().collect();
                 let topsort = topological_ordering(
-                    self.constraints
+                    &numbers_in_update,
+                    &self
+                        .constraints
                         .iter()
                         .filter(|(l, r)| {
                             numbers_in_update.contains(l) && numbers_in_update.contains(r)
                         })
                         .copied()
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 );
                 update.sort_by_key(|num| topsort.get(num).unwrap());
                 Some(update[update.len() / 2])
