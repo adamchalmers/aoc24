@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+use fxhash::FxHashMap as HashMap;
+use fxhash::FxHashSet as HashSet;
 use std::ops::Not;
 
 use anyhow::anyhow;
@@ -18,9 +18,9 @@ fn main() -> Result<()> {
 /// ordered according to the given constraints.
 fn find_middle_page(all_pages: &HashSet<u32>, constraints: &[(u32, u32)]) -> u32 {
     // First, construct a graph where each X|Y constraint is an edge from X to Y.
-    let mut graph = HashMap::new();
-    let mut nodes_with_incoming_edges = HashSet::new();
-    let mut incoming_edges_for_each_node = HashMap::new();
+    let mut graph = HashMap::default();
+    let mut nodes_with_incoming_edges = HashSet::default();
+    let mut incoming_edges_for_each_node = HashMap::default();
     for (l, r) in constraints.iter().copied() {
         graph.entry(l).or_insert(Vec::new()).push(r);
         *incoming_edges_for_each_node.entry(r).or_insert(0) += 1;
