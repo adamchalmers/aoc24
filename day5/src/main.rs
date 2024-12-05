@@ -14,24 +14,31 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Maps page numbers to their order.
-fn topological_ordering(all_numbers: &HashSet<u32>, pairs: &[(u32, u32)]) -> HashMap<u32, usize> {
+/// Find the middle page from the list of all pages, after they've been
+/// ordered according to the given constraints.
+fn find_middle_page(all_pages: &HashSet<u32>, constraints: &[(u32, u32)]) -> u32 {
+    // First, construct a graph where each X|Y constraint is an edge from X to Y.
     let mut graph = HashMap::new();
     let mut nodes_with_incoming_edges = HashSet::new();
     let mut incoming_edges_for_each_node = HashMap::new();
-    for (l, r) in pairs.iter().copied() {
+    for (l, r) in constraints.iter().copied() {
         graph.entry(l).or_insert(Vec::new()).push(r);
         *incoming_edges_for_each_node.entry(r).or_insert(0) += 1;
         nodes_with_incoming_edges.insert(r);
     }
-    let mut starts: Vec<u32> = all_numbers
+    let mut starts: Vec<u32> = all_pages
         .iter()
         .filter(|num| nodes_with_incoming_edges.contains(num).not())
         .copied()
         .collect();
     drop(nodes_with_incoming_edges);
+
+    // Do a topological sort to find pages in the order they must appear.
+    // Stop when we reach the middle page, because that's the only one we care about.
     let mut order = Vec::new();
-    while let Some(curr) = starts.pop() {
+    let goal = all_pages.len() / 2;
+    while order.len() < goal + 1 {
+        let curr = starts.pop().unwrap();
         order.push(curr);
         let Some(removed) = graph.remove(&curr) else {
             continue;
@@ -46,11 +53,7 @@ fn topological_ordering(all_numbers: &HashSet<u32>, pairs: &[(u32, u32)]) -> Has
             }
         }
     }
-    order
-        .into_iter()
-        .enumerate()
-        .map(|(i, num)| (num, i))
-        .collect()
+    order[goal]
 }
 
 type Update = Vec<u32>;
@@ -67,11 +70,10 @@ impl Input {
             .iter()
             .filter_map(|update| {
                 if self.update_is_correct(update) {
-                    return None::<u32>;
+                    return None;
                 }
-                let mut update = update.to_owned();
                 let numbers_in_update: HashSet<_> = update.iter().copied().collect();
-                let topsort = topological_ordering(
+                Some(find_middle_page(
                     &numbers_in_update,
                     &self
                         .constraints
@@ -81,9 +83,7 @@ impl Input {
                         })
                         .copied()
                         .collect::<Vec<_>>(),
-                );
-                update.sort_by_key(|num| topsort.get(num).unwrap());
-                Some(update[update.len() / 2])
+                ))
             })
             .sum()
     }
@@ -91,9 +91,8 @@ impl Input {
     fn solve_q1(&self) -> u32 {
         self.updates
             .iter()
-            .enumerate()
-            .filter_map(|(i, update)| {
-                if self.update_is_correct(&self.updates[i]) {
+            .filter_map(|update| {
+                if self.update_is_correct(update) {
                     Some(update[update.len() / 2])
                 } else {
                     None
@@ -197,14 +196,17 @@ mod tests {
 
         assert_eq!(input.updates_in_correct_order(), vec![0, 1, 2]);
         assert_eq!(input.solve_q1(), 143);
+        let input = Input::parse(include_str!("../input"))?;
+        assert_eq!(input.solve_q1(), 5955);
         Ok(())
     }
 
     #[test]
     fn test_q2() -> Result<()> {
         let input = Input::parse(TEST_INPUT)?;
-
         assert_eq!(input.solve_q2(), 123);
+        let input = Input::parse(include_str!("../input"))?;
+        assert_eq!(input.solve_q2(), 4030);
         Ok(())
     }
 }
