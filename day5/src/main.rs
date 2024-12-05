@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ops::Not;
 
 use anyhow::anyhow;
@@ -8,7 +9,47 @@ fn main() -> Result<()> {
     let input = Input::parse(include_str!("../input"))?;
     let q1 = input.solve_q1();
     println!("Q1: {q1}");
+    let q2 = input.solve_q2();
+    println!("Q2: {q2}");
     Ok(())
+}
+
+/// Maps page numbers to their order.
+fn topological_ordering(pairs: Vec<(u32, u32)>) -> HashMap<u32, usize> {
+    let mut graph = HashMap::new();
+    let mut nodes_with_incoming_edges = HashSet::new();
+    let mut incoming_edges_for_each_node = HashMap::new();
+    for (l, r) in pairs.iter().copied() {
+        graph.entry(l).or_insert(Vec::new()).push(r);
+        *incoming_edges_for_each_node.entry(r).or_insert(0) += 1;
+        nodes_with_incoming_edges.insert(r);
+    }
+    let all_nums: HashSet<_> = pairs.iter().copied().flat_map(|(l, r)| [l, r]).collect();
+    let mut starts: Vec<_> = all_nums
+        .into_iter()
+        .filter(|num| nodes_with_incoming_edges.contains(num).not())
+        .collect();
+    drop(nodes_with_incoming_edges);
+    let mut order = Vec::new();
+    while let Some(curr) = starts.pop() {
+        order.push(curr);
+        let Some(removed) = graph.remove(&curr) else {
+            continue;
+        };
+        for node_from_curr in removed {
+            *incoming_edges_for_each_node
+                .get_mut(&node_from_curr)
+                .unwrap() -= 1;
+            if incoming_edges_for_each_node.get(&node_from_curr).unwrap() == &0 {
+                starts.push(node_from_curr);
+            }
+        }
+    }
+    dbg!(order)
+        .into_iter()
+        .enumerate()
+        .map(|(i, num)| (num, i))
+        .collect()
 }
 
 type Update = Vec<u32>;
@@ -20,12 +61,36 @@ struct Input {
 }
 
 impl Input {
+    fn solve_q2(self) -> u32 {
+        self.updates
+            .iter()
+            .filter_map(|update| {
+                if self.update_is_correct(update) {
+                    return None::<u32>;
+                }
+                let mut update = update.to_owned();
+                let numbers_in_update: HashSet<_> = update.iter().copied().collect();
+                let topsort = topological_ordering(
+                    self.constraints
+                        .iter()
+                        .filter(|(l, r)| {
+                            numbers_in_update.contains(l) && numbers_in_update.contains(r)
+                        })
+                        .copied()
+                        .collect(),
+                );
+                update.sort_by_key(|num| topsort.get(num).unwrap());
+                Some(update[update.len() / 2])
+            })
+            .sum()
+    }
+
     fn solve_q1(&self) -> u32 {
         self.updates
             .iter()
             .enumerate()
             .filter_map(|(i, update)| {
-                if self.update_is_correct(i) {
+                if self.update_is_correct(&self.updates[i]) {
                     Some(update[update.len() / 2])
                 } else {
                     None
@@ -38,13 +103,13 @@ impl Input {
     #[cfg(test)]
     fn updates_in_correct_order(&self) -> Vec<usize> {
         (0..self.updates.len())
-            .filter(|i| self.update_is_correct(*i))
+            .filter(|i| self.update_is_correct(&self.updates[*i]))
             .collect()
     }
 
-    fn update_is_correct(&self, update_id: usize) -> bool {
+    fn update_is_correct(&self, update: &[u32]) -> bool {
         // Map page numbers to their position in the update list.
-        let update: HashMap<u32, usize> = self.updates[update_id]
+        let update: HashMap<u32, usize> = update
             .iter()
             .enumerate()
             .map(|(i, page_num)| (*page_num, i))
@@ -55,9 +120,6 @@ impl Input {
             let pos_right_page = update.get(page_right);
             match (pos_left_page, pos_right_page) {
                 (Some(l), Some(r)) if r <= l => {
-                    // eprintln!("Constraint {page_left}|{page_right} is violated.");
-                    // eprintln!("{page_left} is position {l}");
-                    // eprintln!("{page_right} is position {r}");
                     return false;
                 }
 
@@ -137,6 +199,14 @@ mod tests {
 
         assert_eq!(input.updates_in_correct_order(), vec![0, 1, 2]);
         assert_eq!(input.solve_q1(), 143);
+        Ok(())
+    }
+
+    #[test]
+    fn test_q2() -> Result<()> {
+        let input = Input::parse(TEST_INPUT)?;
+
+        assert_eq!(input.solve_q2(), 123);
         Ok(())
     }
 }
