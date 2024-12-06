@@ -10,6 +10,13 @@ struct Guard {
     direction: Dir,
 }
 
+impl Guard {
+    fn is_facing_obstacle(&self, grid: &Grid) -> bool {
+        let in_front = self.direction.step_from(self.position);
+        grid.is_obstacle(in_front)
+    }
+}
+
 impl std::fmt::Debug for Guard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -36,14 +43,16 @@ enum Dir {
 }
 
 impl Dir {
-    fn turn(&self) -> Self {
-        match self {
+    fn turn(&mut self) {
+        *self = match self {
             Dir::Up => Dir::Right,
             Dir::Down => Dir::Left,
             Dir::Left => Dir::Up,
             Dir::Right => Dir::Down,
         }
     }
+
+    /// Take a step from `curr` in this direction.
     fn step_from(&self, mut curr: Point) -> Point {
         match self {
             Dir::Up => curr.1 -= 1,
@@ -117,10 +126,8 @@ fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
     positions_visited.insert(guard.position);
 
     while grid.is_in_bounds(guard.position) {
-        let space_in_front_of_guard = guard.direction.step_from(guard.position);
-        let guard_facing_obstacle = grid.is_obstacle(space_in_front_of_guard);
-        if guard_facing_obstacle {
-            guard.direction = guard.direction.turn();
+        if guard.is_facing_obstacle(grid) {
+            guard.direction.turn();
         }
         guard.position = guard.direction.step_from(guard.position);
         positions_visited.insert(guard.position);
@@ -130,21 +137,20 @@ fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
 
 #[aoc(day6, part2)]
 fn q2((grid, guard): &(Grid, Guard)) -> usize {
+    let mut new_grid = grid.clone();
     let mut choices_for_obstruction = 0;
     for x in 0..grid.width {
         for y in 0..grid.height {
-            // for x in 6..7 {
-            //     for y in 7..8 {
             let p = (x as isize, y as isize);
             if guard.position == p || grid.is_obstacle(p) {
                 continue;
             }
-            let mut new_grid = grid.clone();
+            let prev = new_grid.inner[y][x];
             new_grid.inner[y][x] = true;
             if loops(&new_grid, *guard) {
-                eprintln!("Placing obstacle at ({},{}) causes a loop", x, y);
                 choices_for_obstruction += 1;
             }
+            new_grid.inner[y][x] = prev;
         }
     }
     choices_for_obstruction
@@ -155,14 +161,11 @@ fn loops(grid: &Grid, mut guard: Guard) -> bool {
     positions_visited.insert(guard);
 
     while grid.is_in_bounds(guard.position) {
-        let space_in_front_of_guard = guard.direction.step_from(guard.position);
-        let guard_facing_obstacle = grid.is_obstacle(space_in_front_of_guard);
-        if guard_facing_obstacle {
-            guard.direction = guard.direction.turn();
+        while guard.is_facing_obstacle(grid) {
+            guard.direction.turn();
         }
         guard.position = guard.direction.step_from(guard.position);
         if !positions_visited.insert(guard) {
-            eprintln!("Guard started a loop at {guard:?}");
             return true;
         }
     }
