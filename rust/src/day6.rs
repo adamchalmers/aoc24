@@ -2,8 +2,8 @@ use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
 use rayon::prelude::*;
 
-type IsObstacle = bool;
 type Point = (isize, isize);
+type Grid = crate::grid::Grid<bool>;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 struct Guard {
@@ -14,7 +14,7 @@ struct Guard {
 impl Guard {
     fn is_facing_obstacle(&self, grid: &Grid) -> bool {
         let in_front = self.direction.step_from(self.position);
-        grid.is_obstacle(in_front)
+        grid.get_copied(in_front).unwrap_or_default()
     }
 }
 
@@ -45,36 +45,6 @@ impl Dir {
             Dir::Right => curr.0 += 1,
         }
         curr
-    }
-}
-
-#[derive(Clone)]
-struct Grid {
-    width: usize,
-    height: usize,
-    inner: Vec<IsObstacle>,
-}
-
-impl Grid {
-    fn is_in_bounds(&self, point: Point) -> bool {
-        let out_of_bounds = point.0 < 0
-            || point.1 < 0
-            || point.0 >= self.width as isize
-            || point.1 >= self.height as isize;
-        !out_of_bounds
-    }
-
-    fn set_obstacle(&mut self, point: Point, obstacle: IsObstacle) {
-        let (x, y) = point;
-        self.inner[y as usize * self.height + x as usize] = obstacle;
-    }
-
-    fn is_obstacle(&self, point: Point) -> bool {
-        if !self.is_in_bounds(point) {
-            return false;
-        }
-        let (x, y) = point;
-        self.inner[y as usize * self.height + x as usize]
     }
 }
 
@@ -155,17 +125,16 @@ fn q2((grid, guard): &(Grid, Guard)) -> usize {
 fn guard_loops_at(x: usize, y: usize, grid: &mut Grid, guard: &Guard) -> bool {
     let p = (x as isize, y as isize);
     // Early termination checks
-    if guard.position == p || grid.is_obstacle(p) {
+    if guard.position == p || grid.get_copied(p).unwrap_or_default() {
         return false;
     }
 
     // Place the obstacle in the grid.
-    let prev = grid.is_obstacle(p);
-    grid.set_obstacle(p, true);
+    grid.set(p, true);
     // Check if guard loops.
     let is_loop = loops(grid, *guard);
     // Reset the grid.
-    grid.set_obstacle(p, prev);
+    grid.set(p, false);
 
     is_loop
 }
