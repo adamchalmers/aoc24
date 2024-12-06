@@ -21,7 +21,7 @@ impl Guard {
 struct Grid {
     width: usize,
     height: usize,
-    inner: Vec<Vec<IsObstacle>>,
+    inner: Vec<IsObstacle>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -63,12 +63,17 @@ impl Grid {
         !out_of_bounds
     }
 
+    fn set_obstacle(&mut self, point: Point, obstacle: IsObstacle) {
+        let (x, y) = point;
+        self.inner[y as usize * self.height + x as usize] = obstacle;
+    }
+
     fn is_obstacle(&self, point: Point) -> bool {
         if !self.is_in_bounds(point) {
             return false;
         }
         let (x, y) = point;
-        self.inner[y as usize][x as usize]
+        self.inner[y as usize * self.height + x as usize]
     }
 }
 
@@ -76,7 +81,7 @@ impl Grid {
 #[aoc_generator(day6)]
 fn parse(input: &str) -> (Grid, Guard) {
     let mut guard = None;
-    let inner: Vec<_> = input
+    let two_d: Vec<_> = input
         .lines()
         .enumerate()
         .map(|(y, line)| {
@@ -93,8 +98,9 @@ fn parse(input: &str) -> (Grid, Guard) {
                 .collect::<Vec<_>>()
         })
         .collect();
-    let height = inner.len();
-    let width = inner[0].len();
+    let height = two_d.len();
+    let width = two_d[0].len();
+    let inner = two_d.into_iter().flatten().collect();
     let guard = guard.unwrap();
 
     (
@@ -135,12 +141,12 @@ fn q2((grid, guard): &(Grid, Guard)) -> usize {
             if guard.position == p || grid.is_obstacle(p) {
                 continue;
             }
-            let prev = new_grid.inner[y][x];
-            new_grid.inner[y][x] = true;
+            let prev = new_grid.is_obstacle(p);
+            new_grid.set_obstacle(p, true);
             if loops(&new_grid, *guard) {
                 choices_for_obstruction += 1;
             }
-            new_grid.inner[y][x] = prev;
+            new_grid.set_obstacle(p, prev);
         }
     }
     choices_for_obstruction
