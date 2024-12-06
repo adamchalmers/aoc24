@@ -63,7 +63,7 @@ fn parse(input: &str, part: Part) -> u32 {
         let mut suffix = &input[i..];
         let n = suffix.len();
         if enabled {
-            if let Some(mul) = mul(&mut suffix).ok() {
+            if let Ok(mul) = mul(&mut suffix) {
                 sum_of_product += mul.run();
                 let chars_parsed = n - suffix.len();
                 i += chars_parsed;

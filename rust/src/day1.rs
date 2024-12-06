@@ -24,8 +24,8 @@ fn part1((l, r): &(List, List)) -> u64 {
 #[aoc(day1, part2)]
 fn part2((l, r): &(List, List)) -> u64 {
     let r = frequencies(r);
-    l.into_iter()
-        .map(|item| item * r.get(&item).copied().unwrap_or_default())
+    l.iter()
+        .map(|item| item * r.get(item).copied().unwrap_or_default())
         .sum()
 }
 
