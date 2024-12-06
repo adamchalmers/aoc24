@@ -1,18 +1,8 @@
+use aoc_runner_derive::aoc;
+use aoc_runner_derive::aoc_generator;
 use fxhash::FxHashMap as HashMap;
 use fxhash::FxHashSet as HashSet;
 use std::ops::Not;
-
-use anyhow::anyhow;
-use anyhow::Result;
-
-fn main() -> Result<()> {
-    let input = Input::parse(include_str!("../input"))?;
-    let q1 = input.solve_q1();
-    println!("Q1: {q1}");
-    let q2 = input.solve_q2();
-    println!("Q2: {q2}");
-    Ok(())
-}
 
 /// Find the middle page from the list of all pages, after they've been
 /// ordered according to the given constraints.
@@ -59,48 +49,76 @@ fn find_middle_page(all_pages: &HashSet<u32>, constraints: &[(u32, u32)]) -> u32
 type Update = Vec<u32>;
 
 #[derive(Debug)]
-struct Input {
+struct Parsed {
     constraints: Vec<(u32, u32)>,
     updates: Vec<Update>,
 }
 
-impl Input {
-    fn solve_q2(self) -> u32 {
-        self.updates
-            .iter()
-            .filter_map(|update| {
-                if self.update_is_correct(update) {
-                    return None;
-                }
-                let numbers_in_update: HashSet<_> = update.iter().copied().collect();
-                Some(find_middle_page(
-                    &numbers_in_update,
-                    &self
-                        .constraints
-                        .iter()
-                        .filter(|(l, r)| {
-                            numbers_in_update.contains(l) && numbers_in_update.contains(r)
-                        })
-                        .copied()
-                        .collect::<Vec<_>>(),
-                ))
-            })
-            .sum()
-    }
+#[aoc_generator(day5)]
+fn parse(input: &str) -> Parsed {
+    let (constraints, updates) = input.split_once("\n\n").unwrap();
 
-    fn solve_q1(&self) -> u32 {
-        self.updates
-            .iter()
-            .filter_map(|update| {
-                if self.update_is_correct(update) {
-                    Some(update[update.len() / 2])
-                } else {
-                    None
-                }
-            })
-            .sum()
-    }
+    let constraints: Vec<_> = constraints
+        .lines()
+        .map(|line| {
+            let (l, r) = line.split_once('|').unwrap();
+            (l.parse().unwrap(), r.parse().unwrap())
+        })
+        .collect();
 
+    let updates: Vec<_> = updates
+        .lines()
+        .map(|line| line.split(',').map(|s| s.parse().unwrap()).collect())
+        .collect();
+
+    assert!(updates.is_empty().not());
+    assert!(constraints.is_empty().not());
+
+    Parsed {
+        constraints,
+        updates,
+    }
+}
+
+#[aoc(day5, part2)]
+fn solve_q2(parsed: &Parsed) -> u32 {
+    parsed
+        .updates
+        .iter()
+        .filter_map(|update| {
+            if parsed.update_is_correct(update) {
+                return None;
+            }
+            let numbers_in_update: HashSet<_> = update.iter().copied().collect();
+            Some(find_middle_page(
+                &numbers_in_update,
+                &parsed
+                    .constraints
+                    .iter()
+                    .filter(|(l, r)| numbers_in_update.contains(l) && numbers_in_update.contains(r))
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ))
+        })
+        .sum()
+}
+
+#[aoc(day5, part1)]
+fn solve_q1(parsed: &Parsed) -> u32 {
+    parsed
+        .updates
+        .iter()
+        .filter_map(|update| {
+            if parsed.update_is_correct(update) {
+                Some(update[update.len() / 2])
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+impl Parsed {
     /// Returns indices of updates which are in correct order.
     #[cfg(test)]
     fn updates_in_correct_order(&self) -> Vec<usize> {
@@ -123,34 +141,6 @@ impl Input {
                 (Some(l), Some(r)) => l <= r,
                 _ => true,
             }
-        })
-    }
-
-    fn parse(input: &str) -> Result<Self> {
-        let (constraints, updates) = input
-            .split_once("\n\n")
-            .ok_or(anyhow!("no empty line found"))?;
-
-        let constraints: Vec<_> = constraints
-            .lines()
-            .map(|line| {
-                line.split_once('|')
-                    .ok_or(anyhow!("no | found on a constraint line"))
-                    .map(|(l, r)| (l.parse().unwrap(), r.parse().unwrap()))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let updates: Vec<_> = updates
-            .lines()
-            .map(|line| line.split(',').map(|s| s.parse().unwrap()).collect())
-            .collect();
-
-        assert!(updates.is_empty().not());
-        assert!(constraints.is_empty().not());
-
-        Ok(Input {
-            constraints,
-            updates,
         })
     }
 }
@@ -188,25 +178,25 @@ mod tests {
 61,13,29
 97,13,75,29,47";
 
+    const INPUT: &str = include_str!("../input/2024/day5.txt");
+
     #[test]
-    fn test_q1() -> Result<()> {
-        let input = Input::parse(TEST_INPUT)?;
+    fn test_q1() {
+        let input = parse(TEST_INPUT);
         assert_eq!(input.updates.len(), 6);
         assert_eq!(input.constraints.len(), 21);
 
         assert_eq!(input.updates_in_correct_order(), vec![0, 1, 2]);
-        assert_eq!(input.solve_q1(), 143);
-        let input = Input::parse(include_str!("../input"))?;
-        assert_eq!(input.solve_q1(), 5955);
-        Ok(())
+        assert_eq!(solve_q1(&input), 143);
+        let input = parse(INPUT);
+        assert_eq!(solve_q1(&input), 5955);
     }
 
     #[test]
-    fn test_q2() -> Result<()> {
-        let input = Input::parse(TEST_INPUT)?;
-        assert_eq!(input.solve_q2(), 123);
-        let input = Input::parse(include_str!("../input"))?;
-        assert_eq!(input.solve_q2(), 4030);
-        Ok(())
+    fn test_q2() {
+        let input = parse(TEST_INPUT);
+        assert_eq!(solve_q2(&input), 123);
+        let input = parse(INPUT);
+        assert_eq!(solve_q2(&input), 4030);
     }
 }

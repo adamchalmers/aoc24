@@ -1,10 +1,11 @@
-#![feature(array_windows)]
-
 use std::str::FromStr;
+
+use aoc_runner_derive::{aoc, aoc_generator};
 
 type Level = i64;
 type Report = Vec<Level>;
 
+#[aoc_generator(day2)]
 fn parse_input(input: &str) -> Vec<Report> {
     input.lines().map(parse_report).collect()
 }
@@ -50,18 +51,19 @@ fn is_report_safe(report: &Report) -> bool {
     (increasing || decreasing) && size_ok
 }
 
-fn main() {
-    let input = std::fs::read_to_string("input").unwrap();
-    let reports = parse_input(&input);
-    let q1 = reports
+#[aoc(day2, part1)]
+fn q1(reports: &[Report]) -> usize {
+    reports
         .iter()
         .filter(|report| is_report_safe(report))
-        .count();
-    let q2 = reports
+        .count()
+}
+#[aoc(day2, part2)]
+fn q2(reports: &[Report]) -> usize {
+    reports
         .iter()
         .filter(|report| is_report_safe_with_dampener(report))
-        .count();
-    println!("Q1: {q1}\nQ2: {q2}");
+        .count()
 }
 
 #[cfg(test)]

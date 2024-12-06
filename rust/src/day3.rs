@@ -1,14 +1,18 @@
+use aoc_runner_derive::aoc;
 use winnow::{
     ascii::dec_uint,
     combinator::{delimited, separated_pair},
     prelude::*,
 };
 
-fn main() {
-    let input = include_str!("../input");
-    let q1 = parse(&input, Part::P1);
-    let q2 = parse(&input, Part::P2);
-    print!("{}\n{}\n", q1, q2);
+#[aoc(day3, part1)]
+fn q1(input: &str) -> u32 {
+    parse(input, Part::P1)
+}
+
+#[aoc(day3, part2)]
+fn q2(input: &str) -> u32 {
+    parse(input, Part::P2)
 }
 
 #[derive(Eq, PartialEq, Debug)]

@@ -1,13 +1,7 @@
+use aoc_runner_derive::{aoc, aoc_generator};
+
 const XMAS: [char; 4] = ['X', 'M', 'A', 'S'];
 const XMAS_BACKWARDS: [char; 4] = ['S', 'A', 'M', 'X'];
-
-fn main() {
-    let input = include_str!("../input");
-    let grid = parse(input);
-    let q1 = solve_q1(&grid);
-    let q2 = solve_q2(&grid);
-    print!("Q1: {q1}\nQ2: {q2}\n");
-}
 
 struct Grid(Vec<Vec<char>>);
 
@@ -17,11 +11,13 @@ impl Grid {
     }
 }
 
+#[aoc_generator(day4)]
 fn parse(input: &str) -> Grid {
     let vecs = input.lines().map(|line| line.chars().collect()).collect();
     Grid(vecs)
 }
 
+#[aoc(day4, part2)]
 fn solve_q2(grid: &Grid) -> usize {
     let mut found = 0;
     for j in 1..(grid.0[0].len() - 1) {
@@ -51,6 +47,7 @@ fn solve_q2(grid: &Grid) -> usize {
     found
 }
 
+#[aoc(day4, part1)]
 fn solve_q1(grid: &Grid) -> usize {
     search_horizontal(grid, true)
         + search_horizontal(grid, false)
@@ -196,13 +193,13 @@ XQQQ
     }
     #[test]
     fn test_q2_real() {
-        let grid = parse(include_str!("../input"));
+        let grid = parse(include_str!("../input/2024/day4.txt"));
         let q2 = solve_q2(&grid);
         assert_eq!(q2, 1905);
     }
     #[test]
     fn test_q1_real() {
-        let grid = parse(include_str!("../input"));
+        let grid = parse(include_str!("../input/2024/day4.txt"));
         let q1 = solve_q1(&grid);
         assert_eq!(q1, 2613);
     }

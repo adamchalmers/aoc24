@@ -1,8 +1,0 @@
-[package]
-name = "day5"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-anyhow = "1.0.94"
-fxhash = "0.2.1"
