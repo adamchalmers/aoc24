@@ -11,6 +11,7 @@ anyhow = "1.0.94"
 aoc-runner = "0.3"
 aoc-runner-derive = "0.3"
 fxhash = "0.2.1"
+rayon = "1.10.0"
 winnow = "0.6.20"
 
 [dev-dependencies]

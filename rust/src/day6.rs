@@ -1,5 +1,6 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
+use rayon::prelude::*;
 
 type IsObstacle = bool;
 type Point = (isize, isize);
@@ -133,23 +134,26 @@ fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
 
 #[aoc(day6, part2)]
 fn q2((grid, guard): &(Grid, Guard)) -> usize {
-    let mut new_grid = grid.clone();
-    let mut choices_for_obstruction = 0;
-    for x in 0..grid.width {
-        for y in 0..grid.height {
-            let p = (x as isize, y as isize);
-            if guard.position == p || grid.is_obstacle(p) {
-                continue;
+    (0..grid.width)
+        .into_par_iter()
+        .map(|x| {
+            let mut new_grid = grid.clone();
+            let mut choices_for_obstruction = 0;
+            for y in 0..grid.height {
+                let p = (x as isize, y as isize);
+                if guard.position == p || grid.is_obstacle(p) {
+                    continue;
+                }
+                let prev = new_grid.is_obstacle(p);
+                new_grid.set_obstacle(p, true);
+                if loops(&new_grid, *guard) {
+                    choices_for_obstruction += 1;
+                }
+                new_grid.set_obstacle(p, prev);
             }
-            let prev = new_grid.is_obstacle(p);
-            new_grid.set_obstacle(p, true);
-            if loops(&new_grid, *guard) {
-                choices_for_obstruction += 1;
-            }
-            new_grid.set_obstacle(p, prev);
-        }
-    }
-    choices_for_obstruction
+            choices_for_obstruction
+        })
+        .sum()
 }
 
 fn loops(grid: &Grid, mut guard: Guard) -> bool {

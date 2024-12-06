@@ -248,6 +248,7 @@ dependencies = [
  "aoc-runner-derive",
  "codspeed-criterion-compat",
  "fxhash",
+ "rayon",
  "winnow",
 ]
 
