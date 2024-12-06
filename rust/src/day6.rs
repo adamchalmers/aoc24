@@ -138,20 +138,19 @@ fn q2((grid, guard): &(Grid, Guard)) -> usize {
         .into_par_iter()
         .map(|x| {
             let mut new_grid = grid.clone();
-            let mut choices_for_obstruction = 0;
-            for y in 0..grid.height {
-                let p = (x as isize, y as isize);
-                if guard.position == p || grid.is_obstacle(p) {
-                    continue;
-                }
-                let prev = new_grid.is_obstacle(p);
-                new_grid.set_obstacle(p, true);
-                if loops(&new_grid, *guard) {
-                    choices_for_obstruction += 1;
-                }
-                new_grid.set_obstacle(p, prev);
-            }
-            choices_for_obstruction
+            (0..grid.height)
+                .filter(|y| {
+                    let p = (x as isize, *y as isize);
+                    if guard.position == p || grid.is_obstacle(p) {
+                        return false;
+                    }
+                    let prev = new_grid.is_obstacle(p);
+                    new_grid.set_obstacle(p, true);
+                    let is_loop = loops(&new_grid, *guard);
+                    new_grid.set_obstacle(p, prev);
+                    is_loop
+                })
+                .count()
         })
         .sum()
 }
