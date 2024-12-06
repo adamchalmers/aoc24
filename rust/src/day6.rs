@@ -18,13 +18,6 @@ impl Guard {
     }
 }
 
-#[derive(Clone)]
-struct Grid {
-    width: usize,
-    height: usize,
-    inner: Vec<IsObstacle>,
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 enum Dir {
     Up,
@@ -55,6 +48,13 @@ impl Dir {
     }
 }
 
+#[derive(Clone)]
+struct Grid {
+    width: usize,
+    height: usize,
+    inner: Vec<IsObstacle>,
+}
+
 impl Grid {
     fn is_in_bounds(&self, point: Point) -> bool {
         let out_of_bounds = point.0 < 0
@@ -78,7 +78,7 @@ impl Grid {
     }
 }
 
-/// Returns guard position too.
+/// Parse the puzzle input.
 #[aoc_generator(day6)]
 fn parse(input: &str) -> (Grid, Guard) {
     let mut guard = None;
@@ -119,10 +119,12 @@ fn parse(input: &str) -> (Grid, Guard) {
 
 #[aoc(day6, part1)]
 fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
+    // Track every position the guard has visited.
     let mut positions_visited = HashSet::default();
     positions_visited.insert(guard.position);
 
     while grid.is_in_bounds(guard.position) {
+        // Advance the guard, turning her if necessary.
         if guard.is_facing_obstacle(grid) {
             guard.direction.turn();
         }
@@ -134,27 +136,41 @@ fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
 
 #[aoc(day6, part2)]
 fn q2((grid, guard): &(Grid, Guard)) -> usize {
+    // Iterate over every column and row in the grid,
+    // but iterate over rows *in parallel*.
+    // This dramatically improves performance on multi-core machines.
     (0..grid.width)
         .into_par_iter()
         .map(|x| {
             let mut new_grid = grid.clone();
             (0..grid.height)
-                .filter(|y| {
-                    let p = (x as isize, *y as isize);
-                    if guard.position == p || grid.is_obstacle(p) {
-                        return false;
-                    }
-                    let prev = new_grid.is_obstacle(p);
-                    new_grid.set_obstacle(p, true);
-                    let is_loop = loops(&new_grid, *guard);
-                    new_grid.set_obstacle(p, prev);
-                    is_loop
-                })
+                .filter(|y| guard_loops_at(x, *y, &mut new_grid, guard))
                 .count()
         })
         .sum()
 }
 
+/// Checks if placing an obstacle at the given (x,y) point will
+/// cause the given guard to get stuck in a loop on the given grid.
+fn guard_loops_at(x: usize, y: usize, grid: &mut Grid, guard: &Guard) -> bool {
+    let p = (x as isize, y as isize);
+    // Early termination checks
+    if guard.position == p || grid.is_obstacle(p) {
+        return false;
+    }
+
+    // Place the obstacle in the grid.
+    let prev = grid.is_obstacle(p);
+    grid.set_obstacle(p, true);
+    // Check if guard loops.
+    let is_loop = loops(grid, *guard);
+    // Reset the grid.
+    grid.set_obstacle(p, prev);
+
+    is_loop
+}
+
+/// Given this grid, does the guard get stuck in a loop?
 fn loops(grid: &Grid, mut guard: Guard) -> bool {
     let mut positions_visited = HashSet::default();
     positions_visited.insert(guard);
