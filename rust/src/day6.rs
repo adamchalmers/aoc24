@@ -17,16 +17,6 @@ impl Guard {
     }
 }
 
-impl std::fmt::Debug for Guard {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "({}, {}) @ {:?}",
-            self.position.0, self.position.1, self.direction
-        )
-    }
-}
-
 #[derive(Clone)]
 struct Grid {
     width: usize,

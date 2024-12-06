@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_real() {
-        let input = std::fs::read_to_string("input").unwrap();
+        let input = include_str!("../input/2024/day3.txt");
 
         let actual_q1 = parse(&input, Part::P1);
         let actual_q2 = parse(&input, Part::P2);
