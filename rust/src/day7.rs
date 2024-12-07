@@ -1,41 +1,32 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 use rayon::prelude::*;
 
-struct Input {
-    equations: Vec<Equation>,
-}
-
 struct Equation {
-    goal: i64,
-    items: Vec<i64>,
+    goal: u64,
+    items: Vec<u64>,
 }
 
-fn is_solvable(goal: i64, items: &[i64], allow_concat: bool) -> bool {
+fn is_solvable(goal: u64, items: &[u64], allow_concat: bool) -> bool {
+    // Base case.
     let Some((curr, rest)) = items.split_last() else {
         return goal == 0;
     };
 
-    // Check + operation
-    if is_solvable(goal - curr, rest, allow_concat) {
-        return true;
-    }
-    // Check * operation
-    if goal % curr == 0 && is_solvable(goal / curr, rest, allow_concat) {
-        return true;
-    }
-    // Check || operation
-    if allow_concat {
+    // Three recursive cases:
+    // 1. Using + operation
+    is_solvable(goal - curr, rest, allow_concat)
+    // 2. Using * operation
+    || goal % curr == 0 && is_solvable(goal / curr, rest, allow_concat)
+    // 3. Using || operation
+    || {
         let new_goal = goal - curr;
-        let tens = 10i64.pow(curr.ilog10() + 1);
-        if new_goal % tens == 0 && is_solvable(new_goal / tens, rest, allow_concat) {
-            return true;
-        }
+        let tens = 10u64.pow(curr.ilog10() + 1);
+        allow_concat && new_goal % tens == 0 && is_solvable(new_goal / tens, rest, allow_concat)
     }
-    false
 }
 
 #[aoc_generator(day7)]
-fn parse(input: &str) -> Input {
+fn parse(input: &str) -> Vec<Equation> {
     let equations = input
         .par_lines()
         .map(|line| {
@@ -47,36 +38,22 @@ fn parse(input: &str) -> Input {
             }
         })
         .collect();
-    Input { equations }
+    equations
 }
 
 #[aoc(day7, part1, Recursive)]
-fn q1(input: &Input) -> i64 {
+fn q1(input: &[Equation]) -> u64 {
     input
-        .equations
         .par_iter()
-        .map(|e| {
-            if is_solvable(e.goal, &e.items, false) {
-                e.goal
-            } else {
-                0
-            }
-        })
+        .filter_map(|e| is_solvable(e.goal, &e.items, false).then_some(e.goal))
         .sum()
 }
 
 #[aoc(day7, part2, Recursive)]
-fn q2(input: &Input) -> i64 {
+fn q2(input: &[Equation]) -> u64 {
     input
-        .equations
         .par_iter()
-        .map(|e| {
-            if is_solvable(e.goal, &e.items, true) {
-                e.goal
-            } else {
-                0
-            }
-        })
+        .filter_map(|e| is_solvable(e.goal, &e.items, true).then_some(e.goal))
         .sum()
 }
 
@@ -104,23 +81,5 @@ mod tests {
     fn test_q2() {
         let input = parse(TEST_INPUT);
         assert_eq!(q2(&input), 11387);
-    }
-
-    #[test]
-    fn test_bad1() {
-        let input = parse("156: 15 6");
-        let _eq = input.equations.first().unwrap();
-    }
-
-    #[test]
-    fn test_bad2() {
-        let input = parse("7290: 6 8 6 15");
-        let _eq = input.equations.first().unwrap();
-    }
-
-    #[test]
-    fn test_bad3() {
-        let input = parse("192: 17 8 14");
-        let _eq = input.equations.first().unwrap();
     }
 }
