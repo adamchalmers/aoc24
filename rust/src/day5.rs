@@ -2,6 +2,7 @@ use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
 use fxhash::FxHashMap as HashMap;
 use fxhash::FxHashSet as HashSet;
+use rayon::prelude::*;
 use std::ops::Not;
 
 /// Find the middle page from the list of all pages, after they've been
@@ -84,7 +85,7 @@ fn parse(input: &str) -> Parsed {
 fn solve_q2(parsed: &Parsed) -> u32 {
     parsed
         .updates
-        .iter()
+        .par_iter()
         .filter_map(|update| {
             if parsed.update_is_correct(update) {
                 return None;
@@ -107,7 +108,7 @@ fn solve_q2(parsed: &Parsed) -> u32 {
 fn solve_q1(parsed: &Parsed) -> u32 {
     parsed
         .updates
-        .iter()
+        .par_iter()
         .filter_map(|update| {
             if parsed.update_is_correct(update) {
                 Some(update[update.len() / 2])
