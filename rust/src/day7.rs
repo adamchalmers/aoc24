@@ -11,12 +11,9 @@ struct Equation {
 }
 
 fn is_solvable(goal: i64, items: &[i64], allow_concat: bool) -> bool {
-    let (curr, rest) = items.split_last().unwrap();
-
-    // Base case
-    if rest.is_empty() {
-        return goal == *curr;
-    }
+    let Some((curr, rest)) = items.split_last() else {
+        return goal == 0;
+    };
 
     // Check + operation
     if is_solvable(goal - curr, rest, allow_concat) {
