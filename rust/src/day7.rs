@@ -10,30 +10,31 @@ struct Equation {
     items: Vec<i64>,
 }
 
-fn is_solvable(goal: i64, items: &[i64], allow_concat: bool) -> Option<String> {
+fn is_solvable(goal: i64, items: &[i64], allow_concat: bool) -> bool {
     let (curr, rest) = items.split_last().unwrap();
 
+    // Base case
     if rest.is_empty() {
-        return (goal == *curr).then_some(format!("{curr}"));
+        return goal == *curr;
     }
-    if let Some(eq) = is_solvable(goal - curr, rest, allow_concat) {
-        return Some(format!("{eq} + {curr}"));
+
+    // Check + operation
+    if is_solvable(goal - curr, rest, allow_concat) {
+        return true;
     }
-    if goal % curr == 0 {
-        if let Some(eq) = is_solvable(goal / curr, rest, allow_concat) {
-            return Some(format!("{eq} * {curr}"));
-        }
+    // Check * operation
+    if goal % curr == 0 && is_solvable(goal / curr, rest, allow_concat) {
+        return true;
     }
+    // Check || operation
     if allow_concat {
         let new_goal = goal - curr;
         let tens = 10i64.pow(curr.ilog10() + 1);
-        if new_goal % tens == 0 {
-            if let Some(eq) = is_solvable(new_goal / tens, rest, allow_concat) {
-                return Some(format!("{eq} || {curr}"));
-            }
+        if new_goal % tens == 0 && is_solvable(new_goal / tens, rest, allow_concat) {
+            return true;
         }
     }
-    None
+    false
 }
 
 #[aoc_generator(day7)]
@@ -58,7 +59,7 @@ fn q1(input: &Input) -> i64 {
         .equations
         .par_iter()
         .map(|e| {
-            if is_solvable(e.goal, &e.items, false).is_some() {
+            if is_solvable(e.goal, &e.items, false) {
                 e.goal
             } else {
                 0
@@ -73,7 +74,7 @@ fn q2(input: &Input) -> i64 {
         .equations
         .par_iter()
         .map(|e| {
-            if is_solvable(e.goal, &e.items, true).is_some() {
+            if is_solvable(e.goal, &e.items, true) {
                 e.goal
             } else {
                 0
