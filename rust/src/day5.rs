@@ -60,7 +60,7 @@ fn parse(input: &str) -> Parsed {
     let (constraints, updates) = input.split_once("\n\n").unwrap();
 
     let constraints: Vec<_> = constraints
-        .lines()
+        .par_lines()
         .map(|line| {
             let (l, r) = line.split_once('|').unwrap();
             (l.parse().unwrap(), r.parse().unwrap())
