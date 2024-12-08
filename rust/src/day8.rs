@@ -13,6 +13,9 @@ struct Input {
 fn parse(input: &str) -> Input {
     let height = input.lines().count() as isize;
     let width = input.lines().next().unwrap().len() as isize;
+
+    // Key = frequency (a single character).
+    // Value = list of all antennae locations broadcasting on that frequency.
     let mut chars_to_point = HashMap::default();
     input
         .lines()
@@ -33,17 +36,18 @@ fn parse(input: &str) -> Input {
             })
         })
         .flatten()
-        .for_each(|(point, ch)| {
-            chars_to_point.entry(ch).or_insert(Vec::new()).push(point);
+        .for_each(|(point, freq)| {
+            chars_to_point.entry(freq).or_insert(Vec::new()).push(point);
         });
 
+    // Find all pairs of antennae that are broadcasting on the same frequency.
     let antennae_pairs: Vec<(Point, Point)> = chars_to_point
-        .iter()
-        .flat_map(|(_ch, points)| {
+        .values()
+        .flat_map(|antennae| {
             // Build a list of all pairs of different antennae using the same frequency.
             let mut all_pairs = Vec::new();
-            for (i, p0) in points.iter().enumerate() {
-                for (j, p1) in points.iter().enumerate() {
+            for (i, p0) in antennae.iter().enumerate() {
+                for (j, p1) in antennae.iter().enumerate() {
                     if i == j {
                         continue;
                     }
@@ -69,10 +73,10 @@ fn q1(input: &Input) -> usize {
         .copied()
         .flat_map(|(p0, p1)| {
             let d = p1 - p0;
-            let anti1 = p1 + d;
-            let anti0 = p0 - d;
-            [anti0, anti1]
+            // Two antinodes.
+            [p1 + d, p0 - d]
                 .into_iter()
+                // Remove any that aren't in bounds of the city.
                 .filter(|point| in_bounds(*point, input.width, input.height))
         })
         .collect();
@@ -80,6 +84,7 @@ fn q1(input: &Input) -> usize {
     places_with_antinodes.len()
 }
 
+// Is the given point within the city bounds?
 fn in_bounds(point: Point, width: isize, height: isize) -> bool {
     point.x < width && point.y < height && point.x >= 0 && point.y >= 0
 }
@@ -92,14 +97,17 @@ fn q2(input: &Input) -> usize {
         .copied()
         .flat_map(|(p0, p1)| {
             let d = p1 - p0;
+            // Find all antinodes.
             let mut antis = vec![p0, p1];
 
+            // Find antinodes after p1
             let mut dpos = d;
             while in_bounds(p1 + dpos, input.width, input.height) {
                 antis.push(p1 + dpos);
                 dpos += d;
             }
 
+            // Find antinodes before p0
             let mut dmin = d;
             while in_bounds(p0 - dmin, input.width, input.height) {
                 antis.push(p0 - dmin);
