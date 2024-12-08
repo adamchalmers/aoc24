@@ -37,7 +37,7 @@ impl Dir {
     }
 
     /// Take a step from `curr` in this direction.
-    fn step_from(&self, mut curr: Point) -> Point {
+    fn step_from(self, mut curr: Point) -> Point {
         match self {
             Dir::Up => curr.1 -= 1,
             Dir::Down => curr.1 += 1,

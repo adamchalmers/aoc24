@@ -8,6 +8,7 @@ pub struct Grid<T> {
 }
 
 impl<T> Grid<T> {
+    #[must_use]
     pub fn is_in_bounds(&self, point: Point) -> bool {
         let out_of_bounds = point.0 < 0
             || point.1 < 0
@@ -21,6 +22,7 @@ impl<T> Grid<T> {
         self.inner[y as usize * self.height + x as usize] = val;
     }
 
+    #[must_use]
     pub fn get(&self, point: Point) -> Option<&T> {
         if !self.is_in_bounds(point) {
             return None;
@@ -28,6 +30,7 @@ impl<T> Grid<T> {
         Some(self.get_unchecked(point))
     }
 
+    #[must_use]
     pub fn get_unchecked(&self, point: Point) -> &T {
         let (x, y) = point;
         &self.inner[y as usize * self.height + x as usize]
@@ -38,6 +41,7 @@ impl<T> Grid<T>
 where
     T: Copy,
 {
+    #[must_use]
     pub fn get_copied(&self, point: Point) -> Option<T> {
         self.get(point).copied()
     }
