@@ -24,22 +24,10 @@ impl std::fmt::Debug for DiskMap {
 }
 
 impl DiskMap {
-    fn internal_free_space(&self) -> usize {
-        self.disk[0..self.disk.len()]
-            .iter()
-            .filter(|disk| disk.is_none())
-            .count()
-    }
-
     fn defrag(&mut self) {
         let mut dst = 0;
         let mut src = self.disk.len() - 1;
-        let to_free = self.internal_free_space();
-        let mut freed = 0;
-        while freed < to_free {
-            if src == dst {
-                break;
-            }
+        while src != dst {
             if self.disk[src].is_none() {
                 src -= 1;
                 continue;
@@ -49,7 +37,6 @@ impl DiskMap {
                 continue;
             }
             self.disk.swap(src, dst);
-            freed += 1;
         }
     }
 
