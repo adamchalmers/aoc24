@@ -40,6 +40,73 @@ impl DiskMap {
         }
     }
 
+    /// Find a free space big enough to fit all `want_size` blocks.
+    /// Search in the given range (inclusive, exclusive).
+    fn find_free_space_at_least(
+        &self,
+        want_size: usize,
+        starting_at: usize,
+        ending_at: usize,
+    ) -> Option<usize> {
+        let mut candidate_dst = starting_at;
+        while candidate_dst < ending_at {
+            if self.disk[candidate_dst].is_some() {
+                candidate_dst += 1;
+                continue;
+            }
+            let mut len_dst = 1;
+            while self.disk[candidate_dst + len_dst] == self.disk[candidate_dst] {
+                len_dst += 1;
+            }
+
+            // Is this free space big enough to hold the file?
+            if len_dst >= want_size {
+                return Some(candidate_dst);
+            }
+            // If not, then skip over this free space, let's try the next one.
+            candidate_dst += len_dst;
+        }
+        None
+    }
+
+    fn defrag_entire_files(&mut self) {
+        let mut dst = 0;
+        let mut src = self.disk.len() - 1;
+        while src != dst {
+            // Find the end of the rightmost file.
+            if self.disk[src].is_none() {
+                src -= 1;
+                continue;
+            };
+            // Find the start of the leftmost free space.
+            if self.disk[dst].is_some() {
+                dst += 1;
+                continue;
+            }
+            // How long is the file?
+            let mut filesize = 1;
+            while self.disk[src - filesize] == self.disk[src] {
+                filesize += 1;
+            }
+
+            if let Some(dst_start) = self.find_free_space_at_least(filesize, dst, src) {
+                // Swap the free space and the file.
+                for i in 0..filesize {
+                    self.disk.swap(dst_start + i, src - i);
+                }
+                // Look for a new file to defragment, and re-examine all possible
+                // free spaces (because the new file might be smaller than the current one,
+                // and fit into spaces this one couldn't).
+                src -= filesize;
+                dst = 0;
+            } else {
+                // We never found a free space big enough for the file.
+                // So you should just move on to the next file, this one can't be defragmented.
+                src -= filesize;
+            }
+        }
+    }
+
     fn checksum(&self) -> u64 {
         self.disk
             .iter()
@@ -82,6 +149,13 @@ fn q1(input: &Input) -> u64 {
     solved.checksum()
 }
 
+#[aoc(day9, part2)]
+fn q2(input: &Input) -> u64 {
+    let mut solved = input.to_owned();
+    solved.defrag_entire_files();
+    solved.checksum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,9 +188,24 @@ mod tests {
 
     #[test]
     fn test_example() {
-        let mut disk = parse(&"2333133121414131402");
-        disk.defrag();
+        let disk = parse(&"2333133121414131402");
+        let actual = q1(&disk);
         let expected = 1928;
-        assert_eq!(q1(&disk), expected);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_example_q2() {
+        let disk = parse(&"2333133121414131402");
+        let actual = q2(&disk);
+        let expected = 2858;
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn test_real_q2() {
+        let disk = parse(&std::fs::read_to_string("input/2024/day9.txt").unwrap());
+        let actual = q2(&disk);
+        let expected = 6265268809555;
+        assert_eq!(actual, expected);
     }
 }
