@@ -1,0 +1,5 @@
+start-day num:
+    cat TEMPLATE | sed "s/XXX/{{num}}/" > src/day{{num}}.rs
+    cat src/lib.rs | sed "s/\/\/ Put new mod on this line/pub mod day{{num}};\n\/\/ Put new mod on this line/" > new.rs
+    cp new.rs src/lib.rs
+    rm new.rs
