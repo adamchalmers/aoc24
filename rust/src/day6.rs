@@ -1,8 +1,8 @@
+use crate::point::Point;
 use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
 use rayon::prelude::*;
 
-type Point = (isize, isize);
 type Grid = crate::grid::Grid<bool>;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -39,10 +39,10 @@ impl Dir {
     /// Take a step from `curr` in this direction.
     fn step_from(self, mut curr: Point) -> Point {
         match self {
-            Dir::Up => curr.1 -= 1,
-            Dir::Down => curr.1 += 1,
-            Dir::Left => curr.0 -= 1,
-            Dir::Right => curr.0 += 1,
+            Dir::Up => curr.y -= 1,
+            Dir::Down => curr.y += 1,
+            Dir::Left => curr.x -= 1,
+            Dir::Right => curr.x += 1,
         }
         curr
     }
@@ -60,7 +60,10 @@ fn parse(input: &str) -> (Grid, Guard) {
                 .enumerate()
                 .map(|(x, ch)| {
                     if ch == '^' {
-                        guard = Some((x, y));
+                        guard = Some(Point {
+                            x: x as isize,
+                            y: y as isize,
+                        });
                         false
                     } else {
                         ch == '#'
@@ -81,7 +84,10 @@ fn parse(input: &str) -> (Grid, Guard) {
             width,
         },
         Guard {
-            position: (guard.0 as isize, guard.1 as isize),
+            position: Point {
+                x: guard.x as isize,
+                y: guard.y as isize,
+            },
             direction: Dir::Up,
         },
     )
@@ -123,7 +129,10 @@ fn q2((grid, guard): &(Grid, Guard)) -> usize {
 /// Checks if placing an obstacle at the given (x,y) point will
 /// cause the given guard to get stuck in a loop on the given grid.
 fn guard_loops_at(x: usize, y: usize, grid: &mut Grid, guard: &Guard) -> bool {
-    let p = (x as isize, y as isize);
+    let p = Point {
+        x: x as isize,
+        y: y as isize,
+    };
     // Early termination checks
     if guard.position == p || grid.get_copied(p).unwrap_or_default() {
         return false;

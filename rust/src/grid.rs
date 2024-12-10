@@ -1,4 +1,4 @@
-type Point = (isize, isize);
+use crate::point::Point;
 
 #[derive(Clone)]
 pub struct Grid<T> {
@@ -10,15 +10,15 @@ pub struct Grid<T> {
 impl<T> Grid<T> {
     #[must_use]
     pub fn is_in_bounds(&self, point: Point) -> bool {
-        let out_of_bounds = point.0 < 0
-            || point.1 < 0
-            || point.0 >= self.width as isize
-            || point.1 >= self.height as isize;
+        let out_of_bounds = point.x < 0
+            || point.y < 0
+            || point.x >= self.width as isize
+            || point.y >= self.height as isize;
         !out_of_bounds
     }
 
     pub fn set(&mut self, point: Point, val: T) {
-        let (x, y) = point;
+        let Point { x, y } = point;
         self.inner[y as usize * self.height + x as usize] = val;
     }
 
@@ -32,7 +32,7 @@ impl<T> Grid<T> {
 
     #[must_use]
     pub fn get_unchecked(&self, point: Point) -> &T {
-        let (x, y) = point;
+        let Point { x, y } = point;
         &self.inner[y as usize * self.height + x as usize]
     }
 }
