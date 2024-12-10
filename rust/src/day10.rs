@@ -15,47 +15,44 @@ impl Graph {
     }
 
     /// Score a trailhead.
-    fn score(&self, start: Point, grid: &Grid<Height>) -> usize {
+    fn score(&self, start: Point, grid: &Grid<Height>, discovered: &mut HashSet<Point>) -> usize {
         // Do a DFS and count every 9 we come across.
-        let mut discovered = HashSet::default();
-        let mut stack = vec![start];
         let mut nines_found = 0;
-        while let Some(curr) = stack.pop() {
-            let Some(curr_height) = grid.get(curr) else {
-                continue;
-            };
-            if discovered.contains(&curr) {
-                continue;
-            }
-            if *curr_height == 9 {
-                nines_found += 1;
-            }
-            let neighbours = match self.edges.get(&curr) {
-                Some(neighbours) => neighbours.as_slice(),
-                None => &[],
-            };
-            stack.extend(neighbours);
-            discovered.insert(curr);
+        let Some(curr_height) = grid.get(start) else {
+            return 0;
+        };
+        if discovered.contains(&start) {
+            return 0;
+        }
+        if *curr_height == 9 {
+            nines_found += 1;
+        }
+        let neighbours = match self.edges.get(&start) {
+            Some(neighbours) => neighbours.as_slice(),
+            None => &[],
+        };
+        discovered.insert(start);
+        for neighbour in neighbours {
+            nines_found += self.score(*neighbour, grid, discovered)
         }
         nines_found
     }
 
     fn rating(&self, start: Point, grid: &Grid<Height>) -> usize {
         // Do a DFS and count every 9 we come across.
-        let mut stack = vec![start];
         let mut nines_found = 0;
-        while let Some(curr) = stack.pop() {
-            let Some(curr_height) = grid.get(curr) else {
-                continue;
-            };
-            if *curr_height == 9 {
-                nines_found += 1;
-            }
-            let neighbours = match self.edges.get(&curr) {
-                Some(neighbours) => neighbours.as_slice(),
-                None => &[],
-            };
-            stack.extend(neighbours);
+        let Some(start_height) = grid.get(start) else {
+            return 0;
+        };
+        if *start_height == 9 {
+            nines_found += 1;
+        }
+        let neighbours = match self.edges.get(&start) {
+            Some(neighbours) => neighbours.as_slice(),
+            None => &[],
+        };
+        for n in neighbours {
+            nines_found += self.rating(*n, grid);
         }
         nines_found
     }
@@ -140,7 +137,11 @@ fn q1(input: &Input) -> usize {
         .trailheads
         .iter()
         .copied()
-        .map(|start| input.graph.score(start, &input.grid))
+        .map(|start| {
+            input
+                .graph
+                .score(start, &input.grid, &mut HashSet::default())
+        })
         .sum()
 }
 
