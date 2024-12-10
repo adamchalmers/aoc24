@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn test_example() {
-        let disk = parse(&"2333133121414131402");
+        let disk = parse("2333133121414131402");
         let actual = q1(&disk);
         let expected = 1928;
         assert_eq!(actual, expected);
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_example_q2() {
-        let disk = parse(&"2333133121414131402");
+        let disk = parse("2333133121414131402");
         let actual = q2(&disk);
         let expected = 2858;
         assert_eq!(actual, expected);

@@ -85,8 +85,8 @@ fn parse(input: &str) -> (Grid, Guard) {
         },
         Guard {
             position: Point {
-                x: guard.x as isize,
-                y: guard.y as isize,
+                x: guard.x,
+                y: guard.y,
             },
             direction: Dir::Up,
         },

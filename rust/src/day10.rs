@@ -11,7 +11,7 @@ struct Graph {
 
 impl Graph {
     fn insert_edge(&mut self, from: Point, to: Point) {
-        self.edges.entry(from).or_insert(Vec::new()).push(to);
+        self.edges.entry(from).or_default().push(to);
     }
 
     /// Score a trailhead.
@@ -61,7 +61,7 @@ impl Graph {
     }
 }
 
-fn neighbours_of(Point { x, y }: Point) -> [Point; 4] {
+fn adjacent_to(Point { x, y }: Point) -> [Point; 4] {
     [
         Point { x, y: y - 1 },
         Point { x: x - 1, y },
@@ -79,6 +79,8 @@ struct Input {
 
 #[aoc_generator(day10)]
 fn parse(input: &str) -> Input {
+    // First, parse the input as a topographic map
+    // (i.e. a 2D grid where each cell has an integer height)
     let height = input.lines().count();
     let width = input.lines().next().unwrap().len();
     let grid: Vec<Height> = input
@@ -97,30 +99,33 @@ fn parse(input: &str) -> Input {
         width,
         height,
     };
+
+    // Then convert that 2D grid into a directed acyclic graph,
+    // where paths in the graph are good hiking trails
+    // (i.e. edge from M to N means that N is 1 step higher).
     let mut graph = Graph::default();
     let mut trailheads = Vec::default();
     for y in 0..height {
         for x in 0..width {
-            let (x, y) = (x as isize, y as isize);
-            let point = Point { x, y };
+            // Check for paths from here to any adjacent locations.
+            let from = Point {
+                x: x as isize,
+                y: y as isize,
+            };
 
-            let this_height = *grid.get(point).unwrap();
+            let this_height = *grid.get(from).unwrap();
             if this_height == 0 {
-                trailheads.push(point);
+                trailheads.push(from);
             }
-            for neighbour in neighbours_of(point) {
-                if let Some(neighbour_height) = grid.get(neighbour) {
-                    if *neighbour_height == this_height + 1 {
-                        // eprintln!(
-                        //     "{}@{} -> {}@{}",
-                        //     point, this_height, neighbour, neighbour_height
-                        // );
-                        graph.insert_edge(point, neighbour);
-                    }
-                }
+            for to in adjacent_to(from)
+                .into_iter()
+                .filter(|to| matches!(grid.get(*to), Some(to) if *to == this_height + 1))
+            {
+                graph.insert_edge(from, to);
             }
         }
     }
+
     Input {
         grid,
         graph,
