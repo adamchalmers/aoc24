@@ -35,4 +35,29 @@ defmodule Day2 do
     |> Enum.filter(&validReport?/1)
     |> Enum.count()
   end
+
+  def q2(inputStr) do
+    inputStr
+    |> String.split("\n")
+    |> Enum.map(&String.split/1)
+    |> Enum.map(fn report ->
+      Enum.map(report, fn levelStr ->
+        {levelNum, ""} = Integer.parse(levelStr)
+        levelNum
+      end)
+    end)
+    |> Enum.filter(fn report -> Day2.validReport?(report) || canBeValid(report) end)
+    |> Enum.count()
+  end
+
+  def canBeValid(report) do
+    n = length(report)
+
+    # Every possible index of the report
+    Enum.to_list(0..n)
+    # remove it
+    |> Enum.map(fn i -> List.delete_at(report, i) end)
+    # valid once removed?
+    |> Enum.any?(&Day2.validReport?/1)
+  end
 end

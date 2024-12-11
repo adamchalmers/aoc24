@@ -11,4 +11,10 @@ defmodule Day2Test do
     realData = String.trim(realData)
     assert Day2.q1(realData) == 230
   end
+
+  test "Q2 real" do
+    {:ok, realData} = File.read("../../rust/input/2024/day2.txt")
+    realData = String.trim(realData)
+    assert Day2.q2(realData) == 301
+  end
 end
