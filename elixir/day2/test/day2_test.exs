@@ -3,18 +3,18 @@ defmodule Day2Test do
   doctest Day2
 
   test "Q1 example" do
-    assert Day2.q1(Day2.testData()) == 2
+    assert Day2.q1(Day2.test_data()) == 2
   end
 
   test "Q1 real" do
-    {:ok, realData} = File.read("../../rust/input/2024/day2.txt")
-    realData = String.trim(realData)
-    assert Day2.q1(realData) == 230
+    {:ok, real_data} = File.read("../../rust/input/2024/day2.txt")
+    real_data = String.trim(real_data)
+    assert Day2.q1(real_data) == 230
   end
 
   test "Q2 real" do
-    {:ok, realData} = File.read("../../rust/input/2024/day2.txt")
-    realData = String.trim(realData)
-    assert Day2.q2(realData) == 301
+    {:ok, real_data} = File.read("../../rust/input/2024/day2.txt")
+    real_data = String.trim(real_data)
+    assert Day2.q2(real_data) == 301
   end
 end
