@@ -27,22 +27,27 @@ fn q2(input: &Input) -> usize {
 fn solve(input: &Input, n: usize) -> usize {
     let mut stones = input.to_owned();
     for _ in 0..n {
-        apply(&mut stones);
+        blink(&mut stones);
     }
     stones.values().sum()
 }
 
-fn apply(stones: &mut Input) {
+fn add_to(m: &mut HashMap<Num, usize>, k: u64, v: usize) {
+    *m.entry(k).or_default() += v;
+}
+
+fn blink(stones: &mut Input) {
     let old_stones: Vec<_> = stones.drain().collect();
     for (number, count) in old_stones {
         if number == 0 {
             *stones.entry(1).or_default() += count;
+            add_to(stones, 1, count);
         } else if even_num_of_digits(number) {
             let (l, r) = split(number);
-            *stones.entry(l).or_default() += count;
-            *stones.entry(r).or_default() += count;
+            add_to(stones, l, count);
+            add_to(stones, r, count);
         } else {
-            *stones.entry(number * 2024).or_default() += count;
+            add_to(stones, number * 2024, count);
         }
     }
 }
@@ -55,7 +60,12 @@ fn num_digits(n: Num) -> u32 {
     n.ilog10() + 1
 }
 
-fn split(n: Num) -> (Num, Num) {
+/// Splits a number down the middle of its digits.
+/// E.g.
+/// ```
+/// assert_eq!(aoc::day11::split(1234), (12, 34));
+/// ```
+pub fn split(n: Num) -> (Num, Num) {
     let half_num_digits = num_digits(n) / 2;
     let tens = 10u64.pow(half_num_digits);
     let l = n / tens;

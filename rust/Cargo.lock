@@ -30,6 +30,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
 
 [[package]]
+name = "aoc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aoc-runner",
+ "aoc-runner-derive",
+ "codspeed-criterion-compat",
+ "fxhash",
+ "rayon",
+ "winnow",
+]
+
+[[package]]
 name = "aoc-runner"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -238,19 +251,6 @@ name = "crunchy"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
-
-[[package]]
-name = "day1"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aoc-runner",
- "aoc-runner-derive",
- "codspeed-criterion-compat",
- "fxhash",
- "rayon",
- "winnow",
-]
 
 [[package]]
 name = "either"
