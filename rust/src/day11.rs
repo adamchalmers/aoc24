@@ -66,11 +66,8 @@ fn num_digits(n: Num) -> u32 {
 /// assert_eq!(aoc::day11::split(1234), (12, 34));
 /// ```
 pub fn split(n: Num) -> (Num, Num) {
-    let half_num_digits = num_digits(n) / 2;
-    let tens = 10u64.pow(half_num_digits);
-    let l = n / tens;
-    let r = n - l * tens;
-    (l, r)
+    let tens = 10u64.pow(num_digits(n) / 2);
+    (n / tens, n % tens)
 }
 
 #[cfg(test)]
