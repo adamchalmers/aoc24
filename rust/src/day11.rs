@@ -27,27 +27,26 @@ fn q2(input: &Input) -> usize {
 fn solve(input: &Input, n: usize) -> usize {
     let mut stones = input.to_owned();
     for _ in 0..n {
-        stones = apply(stones);
+        apply(&mut stones);
     }
     stones.values().sum()
 }
 
-fn apply(stones: Input) -> Input {
-    let mut m = Input::default();
-    for (number, count) in stones {
+fn apply(stones: &mut Input) {
+    let old_stones: Vec<_> = stones.drain().collect();
+    for (number, count) in old_stones {
         if number == 0 {
-            *m.entry(1).or_default() += count;
+            *stones.entry(1).or_default() += count;
         } else if even_num_of_digits(number) {
             let s = number.to_string();
             let l: Num = s[..s.len() / 2].parse().unwrap();
             let r: Num = s[s.len() / 2..].parse().unwrap();
-            *m.entry(l).or_default() += count;
-            *m.entry(r).or_default() += count;
+            *stones.entry(l).or_default() += count;
+            *stones.entry(r).or_default() += count;
         } else {
-            *m.entry(number * 2024).or_default() += count;
+            *stones.entry(number * 2024).or_default() += count;
         }
     }
-    m
 }
 
 fn even_num_of_digits(n: Num) -> bool {
