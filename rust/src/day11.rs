@@ -38,9 +38,7 @@ fn apply(stones: &mut Input) {
         if number == 0 {
             *stones.entry(1).or_default() += count;
         } else if even_num_of_digits(number) {
-            let s = number.to_string();
-            let l: Num = s[..s.len() / 2].parse().unwrap();
-            let r: Num = s[s.len() / 2..].parse().unwrap();
+            let (l, r) = split(number);
             *stones.entry(l).or_default() += count;
             *stones.entry(r).or_default() += count;
         } else {
@@ -52,8 +50,17 @@ fn apply(stones: &mut Input) {
 fn even_num_of_digits(n: Num) -> bool {
     num_digits(n) % 2 == 0
 }
+
 fn num_digits(n: Num) -> u32 {
     n.ilog10() + 1
+}
+
+fn split(n: Num) -> (Num, Num) {
+    let half_num_digits = num_digits(n) / 2;
+    let tens = 10u64.pow(half_num_digits);
+    let l = n / tens;
+    let r = n - l * tens;
+    (l, r)
 }
 
 #[cfg(test)]
@@ -63,6 +70,13 @@ mod tests {
     #[test]
     fn test_num_digits() {
         assert_eq!(num_digits(111), 3);
+    }
+
+    #[test]
+    fn test_split() {
+        assert_eq!(split(10299234), (1029, 9234));
+        assert_eq!(split(102234), (102, 234));
+        assert_eq!(split(1034), (10, 34));
     }
 
     #[test]
