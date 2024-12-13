@@ -1,6 +1,7 @@
 use crate::{grid::Grid, point::Point};
 use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
+use rayon::prelude::*;
 
 type Input = Grid<char>;
 
@@ -35,10 +36,10 @@ fn q2(garden_map: &Input) -> usize {
     } = find_regions(garden_map);
     drop(cell_to_region);
     regions
-        .iter()
+        .par_iter()
         .map(|(_plant, region)| {
             let area = region.len();
-            let edges: Vec<(Point, Dir)> = region
+            let edges: HashSet<(Point, Dir)> = region
                 .iter()
                 .flat_map(|cell| {
                     let mut edges = vec![];
@@ -69,45 +70,23 @@ fn q2(garden_map: &Input) -> usize {
                     edges
                 })
                 .collect();
-            let edges_uniq: HashSet<_> = edges.clone().into_iter().collect();
-            assert_eq!(
-                edges_uniq.len(),
-                edges.len(),
-                "my algorithm didn't generate unique edges"
-            );
-            let sides = sides_from(edges_uniq);
+            let sides = sides_from(edges);
             area * sides
         })
         .sum()
 }
 
 fn sides_from(edges: HashSet<(Point, Dir)>) -> usize {
-    let mut sides = 0;
-    for (point, dir) in &edges {
-        match dir {
-            Dir::Up => {
-                if !edges.contains(&(point.right(), Dir::Up)) {
-                    sides += 1;
-                }
-            }
-            Dir::Down => {
-                if !edges.contains(&(point.right(), Dir::Down)) {
-                    sides += 1;
-                }
-            }
-            Dir::Left => {
-                if !edges.contains(&(point.down(), Dir::Left)) {
-                    sides += 1;
-                }
-            }
-            Dir::Right => {
-                if !edges.contains(&(point.down(), Dir::Right)) {
-                    sides += 1;
-                }
-            }
-        }
-    }
-    sides
+    edges
+        .iter()
+        .filter(|(point, dir)| match dir {
+            Dir::Up if !edges.contains(&(point.right(), Dir::Up)) => true,
+            Dir::Down if !edges.contains(&(point.right(), Dir::Down)) => true,
+            Dir::Left if !edges.contains(&(point.down(), Dir::Left)) => true,
+            Dir::Right if !edges.contains(&(point.down(), Dir::Right)) => true,
+            _ => false,
+        })
+        .count()
 }
 
 #[aoc(day12, part1)]
@@ -117,7 +96,7 @@ fn q1(garden_map: &Input) -> usize {
         regions,
     } = find_regions(garden_map);
     regions
-        .iter()
+        .par_iter()
         .map(|(_plant, region)| {
             let area = region.len();
             let perimeter: usize = region
