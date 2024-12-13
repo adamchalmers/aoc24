@@ -40,7 +40,6 @@ fn blink(stones: &mut Input) {
     let old_stones: Vec<_> = stones.drain().collect();
     for (number, count) in old_stones {
         if number == 0 {
-            *stones.entry(1).or_default() += count;
             add_to(stones, 1, count);
         } else if even_num_of_digits(number) {
             let (l, r) = split(number);
