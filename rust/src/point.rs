@@ -4,6 +4,46 @@ pub struct Point {
     pub y: isize,
 }
 
+impl From<(usize, usize)> for Point {
+    fn from((x, y): (usize, usize)) -> Self {
+        Self {
+            x: x as isize,
+            y: y as isize,
+        }
+    }
+}
+
+impl Point {
+    pub fn up(&self) -> Self {
+        Self {
+            x: self.x,
+            y: self.y - 1,
+        }
+    }
+    pub fn down(&self) -> Self {
+        Self {
+            x: self.x,
+            y: self.y + 1,
+        }
+    }
+    pub fn left(&self) -> Self {
+        Self {
+            x: self.x - 1,
+            y: self.y,
+        }
+    }
+    pub fn right(&self) -> Self {
+        Self {
+            x: self.x + 1,
+            y: self.y,
+        }
+    }
+    /// Get the point above/below/left/right of this one.
+    pub fn cardinal(&self) -> [Self; 4] {
+        [self.up(), self.down(), self.left(), self.right()]
+    }
+}
+
 impl std::fmt::Display for Point {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({},{})", self.x, self.y)

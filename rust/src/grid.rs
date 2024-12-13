@@ -7,6 +7,20 @@ pub struct Grid<T> {
     pub inner: Vec<T>,
 }
 
+impl<T> Grid<T>
+where
+    T: Clone,
+{
+    pub fn new(width: usize, height: usize, initial_value: T) -> Self {
+        let inner = vec![initial_value; width * height];
+        Self {
+            width,
+            height,
+            inner,
+        }
+    }
+}
+
 impl<T> Grid<T> {
     #[must_use]
     pub fn is_in_bounds(&self, point: Point) -> bool {
@@ -34,6 +48,18 @@ impl<T> Grid<T> {
     pub fn get_unchecked(&self, point: Point) -> &T {
         let Point { x, y } = point;
         &self.inner[y as usize * self.height + x as usize]
+    }
+
+    #[must_use]
+    pub fn map<U, F>(self, f: F) -> Grid<U>
+    where
+        F: FnMut(T) -> U,
+    {
+        Grid {
+            width: self.width,
+            height: self.height,
+            inner: self.inner.into_iter().map(f).collect(),
+        }
     }
 }
 
