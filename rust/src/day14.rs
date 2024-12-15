@@ -1,4 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
+use termion::color;
 
 use crate::point::Point;
 
@@ -67,9 +68,13 @@ fn debug(robots: &[Robot], width: usize, height: usize) {
                 x: x as isize,
                 y: y as isize,
             }) {
-                print!("{count}");
+                print!(
+                    "{}{count}{}",
+                    color::Fg(color::Green),
+                    color::Fg(color::Reset)
+                );
             } else {
-                print!(".");
+                print!(" ");
             }
         }
         println!();
