@@ -21,12 +21,12 @@ impl Machine {
     #[allow(non_snake_case)]
     fn min_cost_to_win(&self, add_to_prize: isize) -> Option<usize> {
         // R = location of prize
-        let Rx = (self.prize.x + add_to_prize) as isize;
-        let Ry = (self.prize.y + add_to_prize) as isize;
-        let Ax = self.a.x as isize;
-        let Ay = self.a.y as isize;
-        let Bx = self.b.x as isize;
-        let By = self.b.y as isize;
+        let Rx = self.prize.x + add_to_prize;
+        let Ry = self.prize.y + add_to_prize;
+        let Ax = self.a.x;
+        let Ay = self.a.y;
+        let Bx = self.b.x;
+        let By = self.b.y;
         let top = Bx * Ry - By * Rx;
         let bot = Ay * Bx - Ax * By;
         if top % bot != 0 {
