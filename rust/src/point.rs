@@ -73,6 +73,13 @@ impl std::ops::AddAssign for Point {
     }
 }
 
+impl std::ops::RemAssign for Point {
+    fn rem_assign(&mut self, rhs: Self) {
+        self.x %= rhs.x;
+        self.y %= rhs.y;
+    }
+}
+
 impl std::ops::SubAssign for Point {
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
