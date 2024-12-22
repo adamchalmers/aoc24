@@ -1,3 +1,4 @@
+use crate::dir::Dir;
 use crate::point::Point;
 use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
@@ -15,36 +16,6 @@ impl Guard {
     fn is_facing_obstacle(&self, grid: &Grid) -> bool {
         let in_front = self.direction.step_from(self.position);
         grid.get_copied(in_front).unwrap_or_default()
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-enum Dir {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-impl Dir {
-    fn turn(&mut self) {
-        *self = match self {
-            Dir::Up => Dir::Right,
-            Dir::Down => Dir::Left,
-            Dir::Left => Dir::Up,
-            Dir::Right => Dir::Down,
-        }
-    }
-
-    /// Take a step from `curr` in this direction.
-    fn step_from(self, mut curr: Point) -> Point {
-        match self {
-            Dir::Up => curr.y -= 1,
-            Dir::Down => curr.y += 1,
-            Dir::Left => curr.x -= 1,
-            Dir::Right => curr.x += 1,
-        }
-        curr
     }
 }
 
@@ -102,7 +73,7 @@ fn q1((grid, mut guard): &(Grid, Guard)) -> usize {
     while grid.is_in_bounds(guard.position) {
         // Advance the guard, turning her if necessary.
         if guard.is_facing_obstacle(grid) {
-            guard.direction.turn();
+            guard.direction.turn_right();
         }
         guard.position = guard.direction.step_from(guard.position);
         positions_visited.insert(guard.position);
@@ -155,7 +126,7 @@ fn loops(grid: &Grid, mut guard: Guard) -> bool {
 
     while grid.is_in_bounds(guard.position) {
         while guard.is_facing_obstacle(grid) {
-            guard.direction.turn();
+            guard.direction.turn_right();
         }
         guard.position = guard.direction.step_from(guard.position);
         if !positions_visited.insert(guard) {

@@ -1,3 +1,5 @@
+use crate::dir::Dir;
+
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Point {
     pub x: isize,
@@ -41,6 +43,15 @@ impl Point {
     /// Get the point above/below/left/right of this one.
     pub fn cardinal(&self) -> [Self; 4] {
         [self.up(), self.down(), self.left(), self.right()]
+    }
+
+    pub fn step_to(self, dir: Dir) -> Self {
+        match dir {
+            Dir::Up => self.up(),
+            Dir::Down => self.down(),
+            Dir::Left => self.left(),
+            Dir::Right => self.right(),
+        }
     }
 }
 
