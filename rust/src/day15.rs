@@ -1,5 +1,6 @@
 use crate::dir::Dir;
 use aoc_runner_derive::{aoc, aoc_generator};
+use itertools::Itertools;
 use termion::color;
 
 use crate::point::Point;
@@ -24,7 +25,7 @@ fn print(grid: &Grid, player: Point) {
             let ch = grid.get_unchecked(Point::from((x, y)));
             let sigil_color: Box<dyn color::Color> = match ch {
                 Cell::Wall => Box::new(color::Blue),
-                Cell::Block => Box::new(color::Magenta),
+                Cell::Block | Cell::BlockLeft | Cell::BlockRight => Box::new(color::Magenta),
                 Cell::Empty => Box::new(color::White),
             };
             let sc: &(dyn color::Color) = sigil_color.as_ref();
@@ -33,6 +34,31 @@ fn print(grid: &Grid, player: Point) {
         println!();
     }
     println!();
+}
+
+fn expand(grid: Grid) -> Grid {
+    let width = grid.width * 2;
+    let height = grid.height * 2;
+    let mut inner = Vec::with_capacity(grid.inner.len() * 2);
+    for cell in grid.inner {
+        inner.extend(match cell {
+            /*
+            If the tile is #, the new map contains ## instead.
+            If the tile is O, the new map contains [] instead.
+            If the tile is ., the new map contains .. instead.
+            If the tile is @, the new map contains @. instead.
+            */
+            Cell::Wall => [Cell::Wall, Cell::Wall],
+            Cell::Block => [Cell::BlockLeft, Cell::BlockRight],
+            Cell::Empty => [Cell::Empty, Cell::Empty],
+            Cell::BlockLeft | Cell::BlockRight => unreachable!(),
+        })
+    }
+    Grid {
+        width,
+        height,
+        inner,
+    }
 }
 
 #[aoc_generator(day15)]
@@ -81,6 +107,10 @@ fn parse(input: &str) -> Input {
     }
 }
 
+fn shift_blocks2(dir: Dir, player: Point, grid: &mut Grid) {
+    todo!()
+}
+
 fn shift_blocks(dir: Dir, player: Point, grid: &mut Grid) {
     // eprintln!("Moved");
     let start = dir.step_from(player);
@@ -99,6 +129,7 @@ fn shift_blocks(dir: Dir, player: Point, grid: &mut Grid) {
             Some(Cell::Block) => {
                 maybe_end = maybe_end.step_to(dir);
             }
+            Some(_) => unreachable!("wide blocks aren't in Q1"),
             None => return,
         }
     };
@@ -108,13 +139,16 @@ fn shift_blocks(dir: Dir, player: Point, grid: &mut Grid) {
     grid.set(start, Cell::Empty);
 }
 
+fn has_free_space_to2(dir: Dir, player: Point, grid: &Grid) -> bool {
+    todo!()
+}
 fn has_free_space_to(dir: Dir, player: Point, grid: &Grid) -> bool {
     let mut curr = player.step_to(dir);
     while let Some(curr_cell) = grid.get(curr) {
         match curr_cell {
             Cell::Empty => return true,
             Cell::Wall => return false,
-            Cell::Block => {}
+            Cell::Block | Cell::BlockLeft | Cell::BlockRight => {}
         }
         curr = curr.step_to(dir);
     }
@@ -126,6 +160,26 @@ fn try_move(dir: Dir, player: &mut Point, grid: &mut Grid) {
         shift_blocks(dir, *player, grid);
         *player = player.step_to(dir);
     }
+}
+
+fn try_move2(dir: Dir, player: &mut Point, grid: &mut Grid) {
+    if has_free_space_to2(dir, *player, grid) {
+        shift_blocks2(dir, *player, grid);
+        *player = player.step_to(dir);
+    }
+}
+
+#[aoc(day15, part2)]
+fn q2(input: &Input) -> usize {
+    let mut new_grid = expand(input.grid.clone());
+    let mut player = Point {
+        x: input.player.x * 2,
+        y: input.player.y,
+    };
+    for dir in &input.instructions {
+        try_move2(*dir, &mut player, &mut new_grid);
+    }
+    score(&new_grid)
 }
 
 #[aoc(day15, part1)]
@@ -140,16 +194,21 @@ fn q1(input: &Input) -> usize {
         try_move(dir, &mut player, &mut grid);
         // print(&grid, player);
     }
-    let mut total = 0;
-    for x in 0..grid.width {
-        for y in 0..grid.height {
+    score(&grid)
+}
+
+fn score(grid: &Grid) -> usize {
+    (0..grid.width)
+        .cartesian_product(0..grid.height)
+        .map(|(x, y)| {
             let p = Point::from((x, y));
             if *grid.get_unchecked(p) == Cell::Block {
-                total += gps(p);
+                gps(p)
+            } else {
+                0
             }
-        }
-    }
-    total
+        })
+        .sum()
 }
 
 fn gps(p: Point) -> usize {
@@ -161,6 +220,8 @@ enum Cell {
     Wall,
     Block,
     Empty,
+    BlockLeft,
+    BlockRight,
 }
 
 impl std::fmt::Display for Cell {
@@ -169,6 +230,8 @@ impl std::fmt::Display for Cell {
             Cell::Wall => '#',
             Cell::Block => 'O',
             Cell::Empty => '.',
+            Cell::BlockLeft => '[',
+            Cell::BlockRight => ']',
         };
         write!(f, "{ch}",)
     }
