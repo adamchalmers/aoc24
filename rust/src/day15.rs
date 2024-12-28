@@ -14,22 +14,26 @@ struct Input {
 
 type Grid = crate::grid::Grid<Cell>;
 
-#[allow(dead_code)]
 fn print(grid: &Grid, player: Point) {
     for y in 0..grid.height {
         for x in 0..grid.width {
-            if player == Point::from((x, y)) {
+            let p = Point::from((x, y));
+            if player == p {
                 print!("{}@{}", color::Fg(color::Red), color::Fg(color::Reset));
                 continue;
             }
-            let ch = grid.get_unchecked(Point::from((x, y)));
-            let sigil_color: Box<dyn color::Color> = match ch {
+            let ch = grid.get_unchecked(p);
+            let sigil_fg: Box<dyn color::Color> = match ch {
                 Cell::Wall => Box::new(color::Blue),
-                Cell::Block | Cell::BlockLeft | Cell::BlockRight => Box::new(color::Magenta),
+                Cell::Block => Box::new(color::White),
+                Cell::BlockLeft | Cell::BlockRight => Box::new(color::Cyan),
                 Cell::Empty => Box::new(color::White),
             };
-            let sc: &(dyn color::Color) = sigil_color.as_ref();
-            print!("{}{ch}{}", color::Fg(sc), color::Fg(color::Reset));
+            print!(
+                "{}{ch}{}",
+                color::Fg(sigil_fg.as_ref()),
+                color::Fg(color::Reset)
+            );
         }
         println!();
     }
@@ -38,22 +42,28 @@ fn print(grid: &Grid, player: Point) {
 
 fn expand(grid: Grid) -> Grid {
     let width = grid.width * 2;
-    let height = grid.height * 2;
-    let mut inner = Vec::with_capacity(grid.inner.len() * 2);
-    for cell in grid.inner {
-        inner.extend(match cell {
-            /*
-            If the tile is #, the new map contains ## instead.
-            If the tile is O, the new map contains [] instead.
-            If the tile is ., the new map contains .. instead.
-            If the tile is @, the new map contains @. instead.
-            */
-            Cell::Wall => [Cell::Wall, Cell::Wall],
-            Cell::Block => [Cell::BlockLeft, Cell::BlockRight],
-            Cell::Empty => [Cell::Empty, Cell::Empty],
-            Cell::BlockLeft | Cell::BlockRight => unreachable!(),
+    let height = grid.height;
+    assert_eq!(grid.width * grid.height, grid.inner.len());
+
+    let inner: Vec<_> = grid
+        .inner
+        .into_iter()
+        .flat_map(|cell| {
+            match cell {
+                /*
+                If the tile is #, the new map contains ## instead.
+                If the tile is O, the new map contains [] instead.
+                If the tile is ., the new map contains .. instead.
+                If the tile is @, the new map contains @. instead.
+                */
+                Cell::Wall => [Cell::Wall, Cell::Wall],
+                Cell::Block => [Cell::BlockLeft, Cell::BlockRight],
+                Cell::Empty => [Cell::Empty, Cell::Empty],
+                Cell::BlockLeft | Cell::BlockRight => unreachable!(),
+            }
         })
-    }
+        .collect();
+    assert_eq!(width * height, inner.len());
     Grid {
         width,
         height,
@@ -107,14 +117,12 @@ fn parse(input: &str) -> Input {
     }
 }
 
-fn shift_blocks2(dir: Dir, player: Point, grid: &mut Grid) {
-    todo!()
-}
-
 fn shift_blocks(dir: Dir, player: Point, grid: &mut Grid) {
-    // eprintln!("Moved");
     let start = dir.step_from(player);
-    if grid.get(start) != Some(&Cell::Block) {
+    if !matches!(
+        grid.get(start),
+        Some(Cell::Block | Cell::BlockLeft | Cell::BlockRight)
+    ) {
         return;
     }
     // At this point we know `start` is a block.
@@ -126,22 +134,18 @@ fn shift_blocks(dir: Dir, player: Point, grid: &mut Grid) {
                 break maybe_end;
             }
             Some(Cell::Wall) => return,
-            Some(Cell::Block) => {
+            Some(Cell::Block | Cell::BlockLeft | Cell::BlockRight) => {
                 maybe_end = maybe_end.step_to(dir);
             }
-            Some(_) => unreachable!("wide blocks aren't in Q1"),
             None => return,
         }
     };
     // `end` is now the first empty space after this stack of blocks.
-    // eprintln!("Shifting {start}, {end}");
+    // println!("Shifting {start}, {end}");
     grid.set(end, Cell::Block);
     grid.set(start, Cell::Empty);
 }
 
-fn has_free_space_to2(dir: Dir, player: Point, grid: &Grid) -> bool {
-    todo!()
-}
 fn has_free_space_to(dir: Dir, player: Point, grid: &Grid) -> bool {
     let mut curr = player.step_to(dir);
     while let Some(curr_cell) = grid.get(curr) {
@@ -155,6 +159,20 @@ fn has_free_space_to(dir: Dir, player: Point, grid: &Grid) -> bool {
     false
 }
 
+fn has_free_space_to2(dir: Dir, player: Point, grid: &Grid) -> Option<Vec<Cell>> {
+    let mut curr = player.step_to(dir);
+    let mut boxes = Vec::new();
+    while let Some(curr_cell) = grid.get(curr) {
+        match curr_cell {
+            Cell::Empty => return Some(boxes),
+            Cell::Wall => return None,
+            Cell::Block | Cell::BlockLeft | Cell::BlockRight => boxes.push(*curr_cell),
+        }
+        curr = curr.step_to(dir);
+    }
+    None
+}
+
 fn try_move(dir: Dir, player: &mut Point, grid: &mut Grid) {
     if has_free_space_to(dir, *player, grid) {
         shift_blocks(dir, *player, grid);
@@ -162,24 +180,110 @@ fn try_move(dir: Dir, player: &mut Point, grid: &mut Grid) {
     }
 }
 
-fn try_move2(dir: Dir, player: &mut Point, grid: &mut Grid) {
-    if has_free_space_to2(dir, *player, grid) {
-        shift_blocks2(dir, *player, grid);
-        *player = player.step_to(dir);
-    }
-}
-
 #[aoc(day15, part2)]
 fn q2(input: &Input) -> usize {
-    let mut new_grid = expand(input.grid.clone());
+    // println!("Input grid:");
+    // print(&input.grid, input.player);
+    let mut grid = expand(input.grid.clone());
     let mut player = Point {
         x: input.player.x * 2,
         y: input.player.y,
     };
-    for dir in &input.instructions {
-        try_move2(*dir, &mut player, &mut new_grid);
+    let instructions = input.instructions.iter().copied();
+    for (i, dir) in instructions.into_iter().enumerate() {
+        print(&grid, player);
+        println!("{i}: Move {dir:?}");
+        match dir {
+            Dir::Left | Dir::Right => {
+                if let Some(boxes) = has_free_space_to2(dir, player, &grid) {
+                    if boxes.is_empty() {
+                        println!("Moving");
+                    } else {
+                        println!("Moving, pushing {} boxes", boxes.len());
+                    }
+                    let mut curr = player.step_to(dir).step_to(dir);
+                    // println!("{curr}");
+                    for cell in boxes.iter() {
+                        grid.set(curr, *cell);
+                        curr = curr.step_to(dir);
+                    }
+                    grid.set(player.step_to(dir), Cell::Empty);
+                    player = player.step_to(dir);
+                } else {
+                    println!("Can't move");
+                }
+            }
+            Dir::Down | Dir::Up => match grid.get(player.step_to(dir)) {
+                // Try to move the player up.
+                Some(Cell::Empty) => {
+                    player = player.step_to(dir);
+                    println!("Moved");
+                }
+                Some(Cell::Wall) | None => {
+                    println!("Blocked by wall");
+                }
+                Some(Cell::Block) => unreachable!("These don't exist in Q2"),
+                Some(b @ Cell::BlockLeft | b @ Cell::BlockRight) => {
+                    // Find all blocks above. Track their left side cell.
+                    let mut boxes_found: Vec<Point> = Vec::new();
+                    let mut fringe = if matches!(b, Cell::BlockLeft) {
+                        vec![player.step_to(dir)]
+                    } else {
+                        vec![player.step_to(dir).step_to(Dir::Left)]
+                    };
+                    let mut had_free_space = true;
+                    while let Some(curr) = fringe.pop() {
+                        boxes_found.push(curr);
+                        // Are there boxes above this one?
+                        // let next = curr.step_to(dir);
+                        let curr_cell = grid.get(curr);
+                        let nexts = if curr_cell == Some(&Cell::BlockLeft) {
+                            [curr.step_to(dir), curr.step_to(dir).step_to(Dir::Right)]
+                        } else if curr_cell == Some(&Cell::BlockRight) {
+                            [curr.step_to(dir).step_to(Dir::Left), curr.step_to(dir)]
+                        } else {
+                            panic!("Idk why {:?} is in the grid", curr_cell);
+                            // continue;
+                        };
+                        for next in nexts {
+                            match grid
+                                .get(next)
+                                .expect("should be a wall surrounding everything")
+                            {
+                                Cell::Wall => {
+                                    had_free_space = false;
+                                    break;
+                                }
+                                Cell::Block => unreachable!("None of these in Q2"),
+                                Cell::Empty => {}
+                                Cell::BlockLeft => fringe.push(next),
+                                Cell::BlockRight => fringe.push(next.step_to(Dir::Left)),
+                            }
+                        }
+                    }
+                    if had_free_space {
+                        // Move all boxes 1 space up, and player too.
+                        boxes_found.sort_unstable_by_key(|p| p.y);
+                        if dir == Dir::Down {
+                            boxes_found.reverse();
+                        }
+                        println!("Shifted {} blocks", boxes_found.len());
+                        for p in boxes_found {
+                            grid.set(p.step_to(dir), Cell::BlockLeft);
+                            grid.set(p.step_to(dir).step_to(Dir::Right), Cell::BlockRight);
+                            grid.set(p, Cell::Empty);
+                            grid.set(p.step_to(Dir::Right), Cell::Empty);
+                        }
+                        player = player.step_to(dir);
+                    } else {
+                        println!("Blocked by box");
+                    }
+                }
+            },
+        }
     }
-    score(&new_grid)
+    print(&grid, player);
+    score(&grid, Cell::BlockLeft)
 }
 
 #[aoc(day15, part1)]
@@ -194,15 +298,15 @@ fn q1(input: &Input) -> usize {
         try_move(dir, &mut player, &mut grid);
         // print(&grid, player);
     }
-    score(&grid)
+    score(&grid, Cell::Block)
 }
 
-fn score(grid: &Grid) -> usize {
+fn score(grid: &Grid, target: Cell) -> usize {
     (0..grid.width)
         .cartesian_product(0..grid.height)
         .map(|(x, y)| {
             let p = Point::from((x, y));
-            if *grid.get_unchecked(p) == Cell::Block {
+            if *grid.get_unchecked(p) == target {
                 gps(p)
             } else {
                 0
@@ -234,6 +338,12 @@ impl std::fmt::Display for Cell {
             Cell::BlockRight => ']',
         };
         write!(f, "{ch}",)
+    }
+}
+
+impl std::fmt::Debug for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
     }
 }
 
@@ -277,7 +387,7 @@ mod tests {
     v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^";
 
     #[test]
-    fn test_example_small() {
+    fn example_small() {
         let input = parse(TEST_INPUT_SMALL);
         print(&input.grid, input.player);
         let expected = 2028;
@@ -285,11 +395,28 @@ mod tests {
     }
 
     #[test]
-    fn test_example_medium() {
+    fn example_medium() {
         let input = parse(TEST_INPUT_MEDIUM);
         print(&input.grid, input.player);
-        let expected = 10092;
-        assert_eq!(q1(&input), expected);
+        // assert_eq!(q1(&input), 10092);
+        assert_eq!(q2(&input), 9021)
+    }
+
+    #[test]
+    fn example_q2() {
+        let input = parse(
+            "\
+#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^",
+        );
+        q2(&input);
     }
 
     #[test]

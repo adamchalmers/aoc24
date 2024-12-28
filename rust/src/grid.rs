@@ -23,6 +23,11 @@ where
 
 impl<T> Grid<T> {
     #[must_use]
+    fn index(&self, x: isize, y: isize) -> usize {
+        y as usize * self.width + x as usize
+    }
+
+    #[must_use]
     pub fn is_in_bounds(&self, point: Point) -> bool {
         let out_of_bounds = point.x < 0
             || point.y < 0
@@ -33,7 +38,8 @@ impl<T> Grid<T> {
 
     pub fn set(&mut self, point: Point, val: T) {
         let Point { x, y } = point;
-        self.inner[y as usize * self.height + x as usize] = val;
+        let i = self.index(x, y);
+        self.inner[i] = val;
     }
 
     #[must_use]
@@ -47,7 +53,8 @@ impl<T> Grid<T> {
     #[must_use]
     pub fn get_unchecked(&self, point: Point) -> &T {
         let Point { x, y } = point;
-        &self.inner[y as usize * self.height + x as usize]
+        let i = self.index(x, y);
+        &self.inner[i]
     }
 
     #[must_use]
