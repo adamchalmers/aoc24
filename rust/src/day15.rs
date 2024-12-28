@@ -14,6 +14,7 @@ struct Input {
 
 type Grid = crate::grid::Grid<Cell>;
 
+#[allow(dead_code)]
 fn print(grid: &Grid, player: Point) {
     for y in 0..grid.height {
         for x in 0..grid.width {
@@ -190,16 +191,16 @@ fn q2(input: &Input) -> usize {
         y: input.player.y,
     };
     let instructions = input.instructions.iter().copied();
-    for (i, dir) in instructions.into_iter().enumerate() {
-        print(&grid, player);
-        println!("{i}: Move {dir:?}");
+    for (_i, dir) in instructions.into_iter().enumerate() {
+        // print(&grid, player);
+        // println!("{i}: Move {dir:?}");
         match dir {
             Dir::Left | Dir::Right => {
                 if let Some(boxes) = has_free_space_to2(dir, player, &grid) {
                     if boxes.is_empty() {
-                        println!("Moving");
+                        // println!("Moving");
                     } else {
-                        println!("Moving, pushing {} boxes", boxes.len());
+                        // println!("Moving, pushing {} boxes", boxes.len());
                     }
                     let mut curr = player.step_to(dir).step_to(dir);
                     // println!("{curr}");
@@ -210,17 +211,17 @@ fn q2(input: &Input) -> usize {
                     grid.set(player.step_to(dir), Cell::Empty);
                     player = player.step_to(dir);
                 } else {
-                    println!("Can't move");
+                    // println!("Can't move");
                 }
             }
             Dir::Down | Dir::Up => match grid.get(player.step_to(dir)) {
                 // Try to move the player up.
                 Some(Cell::Empty) => {
                     player = player.step_to(dir);
-                    println!("Moved");
+                    // println!("Moved");
                 }
                 Some(Cell::Wall) | None => {
-                    println!("Blocked by wall");
+                    // println!("Blocked by wall");
                 }
                 Some(Cell::Block) => unreachable!("These don't exist in Q2"),
                 Some(b @ Cell::BlockLeft | b @ Cell::BlockRight) => {
@@ -267,7 +268,7 @@ fn q2(input: &Input) -> usize {
                         if dir == Dir::Down {
                             boxes_found.reverse();
                         }
-                        println!("Shifted {} blocks", boxes_found.len());
+                        // println!("Shifted {} blocks", boxes_found.len());
                         for p in boxes_found {
                             grid.set(p.step_to(dir), Cell::BlockLeft);
                             grid.set(p.step_to(dir).step_to(Dir::Right), Cell::BlockRight);
@@ -276,13 +277,13 @@ fn q2(input: &Input) -> usize {
                         }
                         player = player.step_to(dir);
                     } else {
-                        println!("Blocked by box");
+                        // println!("Blocked by box");
                     }
                 }
             },
         }
     }
-    print(&grid, player);
+    // print(&grid, player);
     score(&grid, Cell::BlockLeft)
 }
 
@@ -304,14 +305,8 @@ fn q1(input: &Input) -> usize {
 fn score(grid: &Grid, target: Cell) -> usize {
     (0..grid.width)
         .cartesian_product(0..grid.height)
-        .map(|(x, y)| {
-            let p = Point::from((x, y));
-            if *grid.get_unchecked(p) == target {
-                gps(p)
-            } else {
-                0
-            }
-        })
+        .filter(|(x, y)| *grid.get_unchecked(Point::from((*x, *y))) == target)
+        .map(|(x, y)| gps(Point::from((x, y))))
         .sum()
 }
 
