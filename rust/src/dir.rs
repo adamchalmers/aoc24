@@ -30,6 +30,24 @@ impl Dir {
         }
     }
 
+    pub fn turn_left(&mut self) {
+        *self = match self {
+            Dir::Up => Dir::Left,
+            Dir::Down => Dir::Right,
+            Dir::Left => Dir::Down,
+            Dir::Right => Dir::Up,
+        }
+    }
+
+    pub fn to_right(mut self) -> Self {
+        self.turn_right();
+        self
+    }
+    pub fn to_left(mut self) -> Self {
+        self.turn_left();
+        self
+    }
+
     /// Take a step from `curr` in this direction.
     pub fn step_from(self, mut curr: Point) -> Point {
         match self {
@@ -39,5 +57,10 @@ impl Dir {
             Dir::Right => curr.x += 1,
         }
         curr
+    }
+
+    /// All 4 cardinal directions.
+    pub fn all() -> [Self; 4] {
+        [Self::Up, Self::Down, Self::Left, Self::Right]
     }
 }

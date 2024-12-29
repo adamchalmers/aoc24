@@ -1,6 +1,6 @@
 use crate::dir::Dir;
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Default)]
 pub struct Point {
     pub x: isize,
     pub y: isize,

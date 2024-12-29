@@ -191,38 +191,25 @@ fn q2(input: &Input) -> usize {
         y: input.player.y,
     };
     let instructions = input.instructions.iter().copied();
-    for (_i, dir) in instructions.into_iter().enumerate() {
-        // print(&grid, player);
-        // println!("{i}: Move {dir:?}");
+    for dir in instructions {
         match dir {
             Dir::Left | Dir::Right => {
                 if let Some(boxes) = has_free_space_to2(dir, player, &grid) {
-                    if boxes.is_empty() {
-                        // println!("Moving");
-                    } else {
-                        // println!("Moving, pushing {} boxes", boxes.len());
-                    }
                     let mut curr = player.step_to(dir).step_to(dir);
-                    // println!("{curr}");
                     for cell in boxes.iter() {
                         grid.set(curr, *cell);
                         curr = curr.step_to(dir);
                     }
                     grid.set(player.step_to(dir), Cell::Empty);
                     player = player.step_to(dir);
-                } else {
-                    // println!("Can't move");
                 }
             }
             Dir::Down | Dir::Up => match grid.get(player.step_to(dir)) {
                 // Try to move the player up.
                 Some(Cell::Empty) => {
                     player = player.step_to(dir);
-                    // println!("Moved");
                 }
-                Some(Cell::Wall) | None => {
-                    // println!("Blocked by wall");
-                }
+                Some(Cell::Wall) | None => {}
                 Some(Cell::Block) => unreachable!("These don't exist in Q2"),
                 Some(b @ Cell::BlockLeft | b @ Cell::BlockRight) => {
                     // Find all blocks above. Track their left side cell.
@@ -244,7 +231,6 @@ fn q2(input: &Input) -> usize {
                             [curr.step_to(dir).step_to(Dir::Left), curr.step_to(dir)]
                         } else {
                             panic!("Idk why {:?} is in the grid", curr_cell);
-                            // continue;
                         };
                         for next in nexts {
                             match grid
@@ -268,7 +254,6 @@ fn q2(input: &Input) -> usize {
                         if dir == Dir::Down {
                             boxes_found.reverse();
                         }
-                        // println!("Shifted {} blocks", boxes_found.len());
                         for p in boxes_found {
                             grid.set(p.step_to(dir), Cell::BlockLeft);
                             grid.set(p.step_to(dir).step_to(Dir::Right), Cell::BlockRight);
@@ -276,8 +261,6 @@ fn q2(input: &Input) -> usize {
                             grid.set(p.step_to(Dir::Right), Cell::Empty);
                         }
                         player = player.step_to(dir);
-                    } else {
-                        // println!("Blocked by box");
                     }
                 }
             },
