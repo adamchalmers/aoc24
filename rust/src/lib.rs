@@ -16,6 +16,7 @@ pub mod day7;
 pub mod day8;
 pub mod day9;
 pub mod day16;
+pub mod day17;
 // Put new mod on this line
 
 // Utilities
