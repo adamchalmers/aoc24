@@ -2,7 +2,7 @@ use aoc_runner_derive::{aoc, aoc_generator};
 
 struct Input {
     registers: Registers,
-    program: Vec<u8>,
+    program: Vec<u64>,
 }
 
 fn f(s: Option<&str>, pref: &'static str) -> u64 {
@@ -45,20 +45,20 @@ struct Registers {
     a: u64,
     b: u64,
     c: u64,
-    output: Vec<u8>,
+    output: Vec<u64>,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-struct Operand(u8);
+struct Operand(u64);
 
 impl Operand {
     fn literal(self) -> u64 {
-        self.0 as u64
+        self.0
     }
     fn combo(self, registers: &Registers) -> u64 {
         match self.0 {
             // Combo operands 0 through 3 represent literal values 0 through 3.
-            0..=3 => self.0 as u64,
+            0..=3 => self.0,
             4 => registers.a,
             5 => registers.b,
             6 => registers.c,
@@ -123,9 +123,7 @@ impl Opcode {
             }
             Opcode::Out => {
                 // The out instruction (opcode 5) calculates the value of its combo operand modulo 8, then outputs that value. (If a program outputs multiple values, they are separated by commas.)
-                registers
-                    .output
-                    .push((operand.combo(registers) % 8).try_into().unwrap());
+                registers.output.push(operand.combo(registers) % 8);
                 // println!("Out combo({}) % 8", operand.0)
             }
             Opcode::Bdv => {
@@ -151,7 +149,7 @@ fn pow2(operand: Operand, registers: &Registers) -> u64 {
     2u64.pow(operand.combo(registers).try_into().unwrap())
 }
 
-fn run(mut registers: Registers, program: &[u8], stop_early: bool) -> String {
+fn run(mut registers: Registers, program: &[u64], stop_early: bool) -> String {
     // Run the program.
     let mut ip = 0;
     while ip < program.len() {
@@ -189,7 +187,8 @@ fn q2(input: &Input) -> u64 {
         .map(|n| n.to_string())
         .collect::<Vec<_>>()
         .join(",");
-    let answer = (0..u64::MAX)
+
+    (0..u64::MAX)
         .into_par_iter()
         .find_first(|i| {
             let reg = Registers {
@@ -198,8 +197,7 @@ fn q2(input: &Input) -> u64 {
             };
             run(reg, &input.program, true) == goal
         })
-        .unwrap();
-    answer
+        .unwrap()
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -214,8 +212,8 @@ enum Opcode {
     Cdv,
 }
 
-impl From<u8> for Opcode {
-    fn from(value: u8) -> Self {
+impl From<u64> for Opcode {
+    fn from(value: u64) -> Self {
         match value {
             0 => Self::Adv,
             1 => Self::Bxl,
@@ -230,8 +228,8 @@ impl From<u8> for Opcode {
     }
 }
 
-impl From<u8> for Operand {
-    fn from(value: u8) -> Self {
+impl From<u64> for Operand {
+    fn from(value: u64) -> Self {
         Self(value)
     }
 }
