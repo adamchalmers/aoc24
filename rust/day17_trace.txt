@@ -1,0 +1,82 @@
+AOC 2024
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+IP = 0
+B = A % 8
+B ^= 101
+C = A / (2 ** B)
+B ^= 110
+B ^= C
+Out B % 8
+
+A /= 8
+JNZ ignored
