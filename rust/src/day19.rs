@@ -1,5 +1,6 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 use fxhash::FxHashSet as HashSet;
+use rayon::prelude::*;
 
 #[derive(Debug)]
 struct Input {
@@ -65,7 +66,7 @@ fn ways_to_make(target: &str, available: &HashSet<String>) -> usize {
 fn q1(input: &Input) -> usize {
     input
         .targets
-        .iter()
+        .par_iter()
         .filter(|target| ways_to_make(target, &input.available) > 0)
         .count()
 }
@@ -74,7 +75,7 @@ fn q1(input: &Input) -> usize {
 fn q2(input: &Input) -> usize {
     input
         .targets
-        .iter()
+        .par_iter()
         .map(|target| ways_to_make(target, &input.available))
         .sum()
 }
