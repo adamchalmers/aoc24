@@ -55,6 +55,7 @@ impl Operand {
     fn literal(self) -> u64 {
         self.0
     }
+    #[inline(always)]
     fn combo(self, registers: &Registers) -> u64 {
         match self.0 {
             // Combo operands 0 through 3 represent literal values 0 through 3.
@@ -92,9 +93,7 @@ impl Opcode {
         match self {
             Opcode::Adv => {
                 // The adv instruction (opcode 0) performs division. The numerator is the value in the A register. The denominator is found by raising 2 to the power of the instruction's combo operand. (So, an operand of 2 would divide A by 4 (2^2); an operand of 5 would divide A by 2^B.) The result of the division operation is truncated to an integer and then written to the A register.
-                let numerator = registers.a;
-                let denominator = pow2(operand, registers);
-                registers.a = numerator / denominator;
+                registers.a >>= operand.combo(registers);
                 // println!("A = A / (2 ** combo({}))", operand.0);
             }
             Opcode::Bxl => {
@@ -129,24 +128,18 @@ impl Opcode {
             Opcode::Bdv => {
                 // The bdv instruction (opcode 6) works exactly like the adv instruction except that the result is stored in the B register. (The numerator is still read from the A register.)
                 let numerator = registers.a;
-                let denominator = pow2(operand, registers);
-                registers.b = numerator / denominator;
+                registers.b = numerator << operand.combo(registers);
                 // println!("B = A / (2 ** combo({}))", operand.0);
             }
             Opcode::Cdv => {
                 // The cdv instruction (opcode 7) works exactly like the adv instruction except that the result is stored in the C register. (The numerator is still read from the A register.)
                 let numerator = registers.a;
-                let denominator = pow2(operand, registers);
-                registers.c = numerator / denominator;
+                registers.c = numerator << operand.combo(registers);
                 // println!("C = A / (2 ** combo({}))", operand.0);
             }
         }
         None
     }
-}
-
-fn pow2(operand: Operand, registers: &Registers) -> u64 {
-    2u64.pow(operand.combo(registers).try_into().unwrap())
 }
 
 fn run(mut registers: Registers, program: &[u64], stop_early: bool) -> String {
