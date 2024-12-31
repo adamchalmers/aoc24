@@ -16,12 +16,12 @@ type Grid = crate::grid::Grid<Cell>;
 struct Cheat {
     start: Point,
     end: Point,
+    start_ord: usize,
+    end_ord: usize,
 }
 
 struct Input {
     path: Vec<Point>,
-    grid: Grid,
-    position_along_track: HashMap<Point, usize>,
 }
 
 #[aoc_generator(day20)]
@@ -74,19 +74,8 @@ fn parse(input: &str) -> Input {
     }
     assert_eq!(&start, path.first().unwrap());
     assert_eq!(&end, path.last().unwrap());
-    let position_along_track: HashMap<Point, usize> = path
-        .iter()
-        .copied()
-        .enumerate()
-        .map(|(i, p)| (p, i))
-        .collect();
 
-    // All done!
-    Input {
-        grid,
-        path,
-        position_along_track,
-    }
+    Input { path }
 }
 
 impl Input {
@@ -103,26 +92,31 @@ fn dist_btwn(p: Point, q: Point) -> usize {
 /// Maps number of picoseconds saved to number of cheats which save that much time.
 fn each_cheat_saves(input: &Input, max_cheat_secs: usize) -> HashMap<usize, usize> {
     // Find all possible cheat walls.
-    let p = (0..input.grid.height)
-        .cartesian_product(0..input.grid.width)
-        .map(|(y, x)| Point::from((x, y)));
-    let q = (0..input.grid.height)
-        .cartesian_product(0..input.grid.width)
-        .map(|(y, x)| Point::from((x, y)));
-    let position_along_track = &input.position_along_track;
-    let cheats = p.cartesian_product(q).filter_map(|(p, q)| {
-        let dist = dist_btwn(p, q);
-        if dist > max_cheat_secs || dist <= 1 {
-            return None;
-        }
-        Some(
-            if position_along_track.get(&p)? < position_along_track.get(&q)? {
-                Cheat { start: p, end: q }
+    let cheats = (0..input.path.len())
+        .cartesian_product(0..input.path.len())
+        .filter_map(|(i, j)| {
+            let p = input.path[i];
+            let q = input.path[j];
+            let dist = dist_btwn(p, q);
+            if dist > max_cheat_secs || dist <= 1 {
+                return None;
+            }
+            Some(if i < j {
+                Cheat {
+                    start: p,
+                    end: q,
+                    start_ord: i,
+                    end_ord: j,
+                }
             } else {
-                Cheat { start: q, end: p }
-            },
-        )
-    });
+                Cheat {
+                    start: q,
+                    end: p,
+                    start_ord: j,
+                    end_ord: i,
+                }
+            })
+        });
     let mut saves = HashMap::default();
     let baseline = input.baseline_speed();
     let mut seen = HashSet::default();
@@ -130,8 +124,8 @@ fn each_cheat_saves(input: &Input, max_cheat_secs: usize) -> HashMap<usize, usiz
         if seen.insert(cheat) {
             continue;
         }
-        let end = input.position_along_track.get(&cheat.end).unwrap();
-        let start = input.position_along_track.get(&cheat.start).unwrap();
+        let end = cheat.end_ord;
+        let start = cheat.start_ord;
         let speed = start + (baseline - end);
         let delta = (baseline - speed) - dist_btwn(cheat.start, cheat.end);
         *saves.entry(delta).or_default() += 1;
@@ -200,20 +194,3 @@ mod tests {
         assert_eq!(dist_btwn(p, q), 6);
     }
 }
-
-/*
-There are 32 cheats that save 50 picoseconds.
-There are 31 cheats that save 52 picoseconds.
-There are 29 cheats that save 54 picoseconds.
-There are 39 cheats that save 56 picoseconds.
-There are 25 cheats that save 58 picoseconds.
-There are 23 cheats that save 60 picoseconds.
-There are 20 cheats that save 62 picoseconds.
-There are 19 cheats that save 64 picoseconds.
-There are 12 cheats that save 66 picoseconds.
-There are 14 cheats that save 68 picoseconds.
-There are 12 cheats that save 70 picoseconds.
-There are 22 cheats that save 72 picoseconds.
-There are 4 cheats that save 74 picoseconds.
-There are 3 cheats that save 76 picoseconds.
-*/
