@@ -1,6 +1,5 @@
 use crate::{dir::Dir, point::Point};
 use aoc_runner_derive::{aoc, aoc_generator};
-use fxhash::FxHashMap as HashMap;
 use fxhash::FxHashSet as HashSet;
 use itertools::Itertools;
 
@@ -12,12 +11,28 @@ enum Cell {
 
 type Grid = crate::grid::Grid<Cell>;
 
-#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Clone, Copy)]
 struct Cheat {
     start: Point,
     end: Point,
     start_ord: usize,
     end_ord: usize,
+    dist: usize,
+}
+
+impl std::hash::Hash for Cheat {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // These are the only fields that matter for uniquely identifying a hash.
+        self.start.hash(state);
+        self.end.hash(state);
+    }
+}
+
+impl PartialEq for Cheat {
+    fn eq(&self, other: &Self) -> bool {
+        // These are the only fields that matter for uniquely identifying a hash.
+        self.start == other.start && self.end == other.end
+    }
 }
 
 struct Input {
@@ -89,16 +104,15 @@ fn dist_btwn(p: Point, q: Point) -> usize {
     d as usize
 }
 
-/// Maps number of picoseconds saved to number of cheats which save that much time.
-fn each_cheat_saves(input: &Input, max_cheat_secs: usize) -> HashMap<usize, usize> {
-    // Find all possible cheat walls.
-    let cheats = (0..input.path.len())
+fn cheats_over(save_at_least: usize, input: &Input, max_cheat_length: usize) -> usize {
+    // Find all possible cheats. Store in a HashSet to deduplicate them.
+    let cheats: HashSet<_> = (0..input.path.len())
         .cartesian_product(0..input.path.len())
         .filter_map(|(i, j)| {
             let p = input.path[i];
             let q = input.path[j];
             let dist = dist_btwn(p, q);
-            if dist > max_cheat_secs || dist <= 1 {
+            if dist > max_cheat_length || dist <= 1 {
                 return None;
             }
             Some(if i < j {
@@ -107,6 +121,7 @@ fn each_cheat_saves(input: &Input, max_cheat_secs: usize) -> HashMap<usize, usiz
                     end: q,
                     start_ord: i,
                     end_ord: j,
+                    dist,
                 }
             } else {
                 Cheat {
@@ -114,36 +129,24 @@ fn each_cheat_saves(input: &Input, max_cheat_secs: usize) -> HashMap<usize, usiz
                     end: p,
                     start_ord: j,
                     end_ord: i,
+                    dist,
                 }
             })
-        });
-    let mut saves = HashMap::default();
-    let baseline = input.baseline_speed();
-    let mut seen = HashSet::default();
-    for cheat in cheats {
-        if seen.insert(cheat) {
-            continue;
-        }
-        let end = cheat.end_ord;
-        let start = cheat.start_ord;
-        let speed = start + (baseline - end);
-        let delta = (baseline - speed) - dist_btwn(cheat.start, cheat.end);
-        *saves.entry(delta).or_default() += 1;
-    }
-    saves
-}
-
-fn cheats_over(save_at_least: usize, input: &Input, max_cheat_secs: usize) -> usize {
-    each_cheat_saves(input, max_cheat_secs)
-        .iter()
-        .filter_map(|(delta, freq)| {
-            if delta >= &save_at_least {
-                Some(freq)
-            } else {
-                None
-            }
         })
-        .sum()
+        .collect();
+
+    // Count all cheats that save you enough time.
+    let baseline = input.baseline_speed();
+    cheats
+        .into_iter()
+        .filter(|cheat| {
+            let end = cheat.end_ord;
+            let start = cheat.start_ord;
+            let speed = start + (baseline - end);
+            let delta = (baseline - speed) - cheat.dist;
+            delta >= save_at_least
+        })
+        .count()
 }
 
 #[aoc(day20, part1)]
@@ -153,9 +156,7 @@ fn q1(input: &Input) -> usize {
 
 #[aoc(day20, part2)]
 fn q2(input: &Input) -> usize {
-    let n = cheats_over(100, input, 20);
-    assert!(n < 1028193);
-    n
+    cheats_over(100, input, 20)
 }
 
 #[cfg(test)]
