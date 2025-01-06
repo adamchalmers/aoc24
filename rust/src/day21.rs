@@ -263,7 +263,7 @@ impl State {
     fn successors(self, code: &[char]) -> Vec<(Dpad, State)> {
         Dpad::all_states()
             .filter_map(|human_choice| {
-                let Some(new_state) = self.clone().advance(human_choice) else {
+                let Some(new_state) = clone().advance(human_choice) else {
                     return None;
                 };
                 if !code.starts_with(new_state.keys()) {
